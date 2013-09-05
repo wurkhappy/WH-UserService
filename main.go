@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 	"github.com/gorilla/mux"
-	"net/http"
 	"github.com/wurkhappy/WH-UserService/DB"
 	"github.com/wurkhappy/WH-UserService/controllers"
 	"labix.org/v2/mgo"
+	"net/http"
 )
 
 func hello(w http.ResponseWriter, req *http.Request) {
@@ -14,23 +14,24 @@ func hello(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
-	DB.Session, err = mgo.Dial(DB.Config.DBURL)
+	var err error
+	DB.Session, err = mgo.Dial(DB.Config["DBURL"])
 	if err != nil {
 		panic(err)
 	}
 	r := mux.NewRouter()
 	r.HandleFunc("/world", hello).Methods("GET")
-	r.HandleFunc("/user", dbContextMixIn(UserController.CreateUser)).Methods("POST")
+	r.Handle("/user", dbContextMixIn(UserController.CreateUser)).Methods("GET")
 	http.Handle("/", r)
 
 	http.ListenAndServe(":3000", nil)
 }
 
-type dbContextMixIn func(http.ResponseWriter, *http.Request, *Context) error
+type dbContextMixIn func(http.ResponseWriter, *http.Request, *DB.Context)
 
 func (h dbContextMixIn) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	//create the context
-	ctx, err := NewContext(req)
+	ctx, err := DB.NewContext(req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -38,16 +39,10 @@ func (h dbContextMixIn) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	defer ctx.Close()
 
 	//run the handler and grab the error, and report it
-	err = h(w, req, ctx)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	h(w, req, ctx)
 }
-
 
 // I need to Dial the DB in main() and create a session.
 // That session needs to get passed to the handlers so that they can clone it.
 // Once it's cloned then we can do some ops
 // then we have to close the session
-

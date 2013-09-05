@@ -1,8 +1,6 @@
 package DB
 
-type config struct{
-	DBName string
-	DBURL string
+var Config = map[string]string{
+	"DBName": "UserDB",
+	"DBURL":  "localhost:27017",
 }
-
-Config := config{DBName: "UserDB", DBURL: "localhost:27017"}

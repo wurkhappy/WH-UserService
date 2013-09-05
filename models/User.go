@@ -1,26 +1,28 @@
-package models
+package Models
 
 import (
 	"code.google.com/p/go.crypto/bcrypt"
+	"labix.org/v2/mgo/bson"
+	"time"
 )
 
-type User struct{
-	FirstName string
-	LastName string
-	Email string
-	PwHash string
-	AvatarURL string
-	PhoneNumber string
-	DateCreated string
-	AccessToken string
-	AccessTokenSecret string
+type User struct {
+	ID                    bson.ObjectId `bson:"_id,omitempty"`
+	FirstName             string
+	LastName              string
+	Email                 string
+	PwHash                []byte
+	AvatarURL             string
+	PhoneNumber           string
+	DateCreated           time.Time
+	AccessToken           string
+	AccessTokenSecret     string
 	AccessTokenExpiration string
-	ConfirmationCode string
-	ID string
-	Fingerprint string
+	ConfirmationCode      string
+	Fingerprint           string
 }
 
-//methods 
+//methods
 //passwordIsValid
 //Full Name
 //setAvatar
@@ -34,5 +36,11 @@ func (u *User) SetPassword(password string) {
 	if err != nil {
 		panic(err) //this is a panic because bcrypt errors on invalid costs
 	}
-	u.Password = hpass
+	u.PwHash = hpass
+}
+
+func NewUser() *User {
+	return &User{
+		DateCreated: time.Now(),
+	}
 }
