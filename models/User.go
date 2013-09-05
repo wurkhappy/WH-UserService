@@ -36,7 +36,7 @@ func (u *User) SetPassword(password string) {
 
 func (u *User) SaveUserWithCtx(ctx *DB.Context) {
 	coll := ctx.Database.C("users")
-	if err := coll.Insert(u); err != nil {
+	if _, err := coll.UpsertId(u.ID, &u); err != nil {
 		return
 	}
 }
@@ -56,7 +56,7 @@ func NewUser() *User {
 	}
 }
 
-func FindUserByEmail(ctx *DB.Context, email string) (u *User, err error) {
+func FindUserByEmail( email string, ctx *DB.Context) (u *User, err error) {
 	err = ctx.Database.C("users").Find(bson.M{"Email": email}).One(&u)
 	if err != nil {
 		return
@@ -64,7 +64,7 @@ func FindUserByEmail(ctx *DB.Context, email string) (u *User, err error) {
 	return
 }
 
-func FindUserByID(ctx *DB.Context, id string) (u *User, err error) {
+func FindUserByID( id string, ctx *DB.Context) (u *User, err error) {
 	err = ctx.Database.C("users").Find(bson.M{"_id": bson.ObjectIdHex(id)}).One(&u)
 	if err != nil {
 		return

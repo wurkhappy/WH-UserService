@@ -1,4 +1,4 @@
-package UserController
+package Controllers
 
 import (
 	"bytes"
@@ -38,7 +38,7 @@ func CreateUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	u, _ := json.Marshal(user)
 	w.Write(u)
 
-	// fmt.Fprint(w, "Created User")
+	fmt.Fprint(w, "Created User")
 
 }
 
@@ -59,6 +59,27 @@ func uploadPhoto(filename string, base64string string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func GetUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
+        vars := mux.Vars(req)
+        id := vars["id"]
+        user, _ := Models.FindUserByID(id, ctx)
+
+        u, _ := json.Marshal(user)
+        w.Write(u)
+
+}
+
+func UpdateUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
+        user := new(Models.User)
+        decoder := json.NewDecoder(req.Body)
+        decoder.Decode(&user)
+
+        user.SaveUserWithCtx(ctx)
+
+        fmt.Print("{}")
+
 }
 
 func DeleteUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {

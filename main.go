@@ -21,8 +21,10 @@ func main() {
 	}
 	r := mux.NewRouter()
 	r.HandleFunc("/world", hello).Methods("GET")
-	r.Handle("/user", dbContextMixIn(UserController.CreateUser)).Methods("POST")
-	r.Handle("/user/{id}", dbContextMixIn(UserController.DeleteUser)).Methods("DELETE")
+	r.Handle("/user", dbContextMixIn(Controllers.CreateUser)).Methods("POST")
+	r.Handle("/user/{id}", dbContextMixIn(Controllers.UpdateUser)).Methods("PUT")
+	r.Handle("/user/{id}", dbContextMixIn(Controllers.DeleteUser)).Methods("DELETE")
+	r.Handle("/user/{id}", dbContextMixIn(Controllers.GetUser)).Methods("GET")
 	http.Handle("/", r)
 
 	http.ListenAndServe(":3000", nil)
