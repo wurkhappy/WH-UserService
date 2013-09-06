@@ -2,18 +2,18 @@ package main
 
 import (
 	// "fmt"
-	"net/http"
-	"net/http/httptest"
-	"net/url"
-	"testing"
-	// "github.com/wurkhappy/WH-UserService/models"
 	"bytes"
 	"encoding/json"
 	"github.com/wurkhappy/WH-UserService/DB"
 	"github.com/wurkhappy/WH-UserService/controllers"
+	"github.com/wurkhappy/WH-UserService/models"
 	"io"
 	"labix.org/v2/mgo"
-
+	"log"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"testing"
 )
 
 type nopCloser struct {
@@ -24,34 +24,76 @@ func (n nopCloser) Close() error {
 	return nil
 }
 
+func ClearDB() {
 
+}
+
+func NewContext(req *http.Request) (*DB.Context, error) {
+	return &DB.Context{
+		Database: DB.Session.Clone().DB("TestUserDB"),
+	}, nil
+}
 
 func TestCreateUser(t *testing.T) {
-	//test id is returned
-	//test that first name is the same
-	//test that pass
-	// DB.Session, _ = mgo.Dial(DB.Config["DBURL"])
+	DB.Session, _ = mgo.Dial(DB.Config["DBURL"])
 
-	// user := map[string]interface{}{
-	// 	"FirstName": "Test",
-	// 	"Password":  "password",
-	// }
-	// u, _ := json.Marshal(user)
+	userParams := map[string]interface{}{
+		"FirstName": "Test",
+		"Password":  "password",
+	}
+	u, _ := json.Marshal(userParams)
 
-	// record := httptest.NewRecorder()
-	// req := &http.Request{
-	// 	Method: "POST",
-	// 	URL:    &url.URL{Path: "/user"},
-	// 	Body:   nopCloser{bytes.NewBuffer(u)},
-	// }
+	record := httptest.NewRecorder()
+	req := &http.Request{
+		Method: "POST",
+		URL:    &url.URL{Path: "/user"},
+		Body:   nopCloser{bytes.NewBuffer(u)},
+	}
 
-	// //create the context
-	// ctx, _ := DB.NewContext(req)
-	// defer ctx.Close()
+	ctx, _ := NewContext(req)
+	defer ctx.Close()
 
-	// Controllers.CreateUser(record, req, ctx)
-	// // if got, want := record.Code, 400; got != want {
-	// // 	t.Errorf("%s: response code = %d, want %d", "Hello world test", got, want)
-	// // }
-	// // fmt.Print("HI")
+	Controllers.CreateUser(record, req, ctx)
+	if gotCode, wantCode := record.Code, 200; gotCode != wantCode {
+		t.Errorf("%s:%d RESULT: response code = %d", "Should respond with code", wantCode, gotCode)
+	}
+
+	user := new(Models.User)
+	decoder := json.NewDecoder(record.Body)
+	decoder.Decode(&user)
+	if gotName, wantName := user.FirstName, userParams["FirstName"]; gotName != wantName {
+		t.Errorf("%s:%d RESULT: FirstName = %d", "Should return first name", wantName, gotName)
+	}
+
+	if !user.ID.Valid() {
+		t.Error("Did not return a user id")
+	}
 }
+
+// func TestDeleteUser(t *testing.T) {
+// 	DB.Session, _ = mgo.Dial(DB.Config["DBURL"])
+
+// 	user := Models.NewUser()
+
+// 	record := httptest.NewRecorder()
+// 	req := &http.Request{
+// 		Method: "DELETE",
+// 		URL:    &url.URL{Path: "/user/" + user.ID.Hex()},
+// 	}
+
+// 	ctx, _ := NewContext(req)
+// 	defer ctx.Close()
+// 	user.SaveUserWithCtx(ctx)
+
+// 	Controllers.DeleteUser(record, req, ctx)
+// 	if gotCode, wantCode := record.Code, 200; gotCode != wantCode {
+// 		t.Errorf("%s:%d RESULT: response code = %d", "Should respond with code", wantCode, gotCode)
+// 	}
+// 	log.Print(user.ID.Hex())
+
+// 	u, _ := Models.FindUserByID(user.ID.Hex(), ctx)
+
+// 	if u != nil {
+// 		t.Error("Did not delete user from DB")
+// 	}
+// }

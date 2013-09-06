@@ -21,25 +21,19 @@ func CreateUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(req.Body)
 	json.Unmarshal(buf.Bytes(), &requestData)
+	json.Unmarshal(buf.Bytes(), &user)
 
-	user.Email = requestData["Email"].(string)
-	user.SetPassword(requestData["Password"].(string))
-	user.FirstName = requestData["FirstName"].(string)
-	user.LastName = requestData["LastName"].(string)
-	if _, ok := requestData["PhoneNumber"]; ok {
-		user.PhoneNumber = requestData["PhoneNumber"].(string)
-	}
-	user.AvatarURL = "https://s3.amazonaws.com/PegueNumero/" + user.ID.Hex() + ".jpg"
+        user.SetPassword(requestData["Password"].(string))
+
 	if _, ok := requestData["AvatarData"]; ok {
+                user.AvatarURL = "https://s3.amazonaws.com/PegueNumero/" + user.ID.Hex() + ".jpg"
 		go uploadPhoto(user.ID.Hex(), requestData["AvatarData"].(string))
 	}
 
 	user.SaveUserWithCtx(ctx)
+
 	u, _ := json.Marshal(user)
 	w.Write(u)
-
-	fmt.Fprint(w, "Created User")
-
 }
 
 func uploadPhoto(filename string, base64string string) {
@@ -62,23 +56,23 @@ func uploadPhoto(filename string, base64string string) {
 }
 
 func GetUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-        vars := mux.Vars(req)
-        id := vars["id"]
-        user, _ := Models.FindUserByID(id, ctx)
+	vars := mux.Vars(req)
+	id := vars["id"]
+	user, _ := Models.FindUserByID(id, ctx)
 
-        u, _ := json.Marshal(user)
-        w.Write(u)
+	u, _ := json.Marshal(user)
+	w.Write(u)
 
 }
 
 func UpdateUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-        user := new(Models.User)
-        decoder := json.NewDecoder(req.Body)
-        decoder.Decode(&user)
+	user := new(Models.User)
+	decoder := json.NewDecoder(req.Body)
+	decoder.Decode(&user)
 
-        user.SaveUserWithCtx(ctx)
+	user.SaveUserWithCtx(ctx)
 
-        fmt.Print("{}")
+	fmt.Print("{}")
 
 }
 
