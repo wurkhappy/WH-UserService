@@ -4,12 +4,14 @@ import (
 	// "fmt"
 	"bytes"
 	"encoding/json"
+	// "github.com/gorilla/context"
+	// "github.com/gorilla/mux"
 	"github.com/wurkhappy/WH-UserService/DB"
 	"github.com/wurkhappy/WH-UserService/controllers"
 	"github.com/wurkhappy/WH-UserService/models"
 	"io"
 	"labix.org/v2/mgo"
-	"log"
+	// "log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -58,7 +60,7 @@ func TestCreateUser(t *testing.T) {
 		t.Errorf("%s:%d RESULT: response code = %d", "Should respond with code", wantCode, gotCode)
 	}
 
-	user := new(Models.User)
+	user := new(models.User)
 	decoder := json.NewDecoder(record.Body)
 	decoder.Decode(&user)
 	if gotName, wantName := user.FirstName, userParams["FirstName"]; gotName != wantName {
@@ -69,31 +71,3 @@ func TestCreateUser(t *testing.T) {
 		t.Error("Did not return a user id")
 	}
 }
-
-// func TestDeleteUser(t *testing.T) {
-// 	DB.Session, _ = mgo.Dial(DB.Config["DBURL"])
-
-// 	user := Models.NewUser()
-
-// 	record := httptest.NewRecorder()
-// 	req := &http.Request{
-// 		Method: "DELETE",
-// 		URL:    &url.URL{Path: "/user/" + user.ID.Hex()},
-// 	}
-
-// 	ctx, _ := NewContext(req)
-// 	defer ctx.Close()
-// 	user.SaveUserWithCtx(ctx)
-
-// 	Controllers.DeleteUser(record, req, ctx)
-// 	if gotCode, wantCode := record.Code, 200; gotCode != wantCode {
-// 		t.Errorf("%s:%d RESULT: response code = %d", "Should respond with code", wantCode, gotCode)
-// 	}
-// 	log.Print(user.ID.Hex())
-
-// 	u, _ := Models.FindUserByID(user.ID.Hex(), ctx)
-
-// 	if u != nil {
-// 		t.Error("Did not delete user from DB")
-// 	}
-// }

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	// "github.com/gorilla/context"
 	"github.com/kr/s3"
 	"github.com/wurkhappy/WH-UserService/DB"
 	"github.com/wurkhappy/WH-UserService/models"
@@ -15,7 +16,7 @@ import (
 )
 
 func CreateUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-	user := Models.NewUser()
+	user := models.NewUser()
 
 	var requestData map[string]interface{}
 	buf := new(bytes.Buffer)
@@ -23,10 +24,10 @@ func CreateUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	json.Unmarshal(buf.Bytes(), &requestData)
 	json.Unmarshal(buf.Bytes(), &user)
 
-        user.SetPassword(requestData["Password"].(string))
+	user.SetPassword(requestData["Password"].(string))
 
 	if _, ok := requestData["AvatarData"]; ok {
-                user.AvatarURL = "https://s3.amazonaws.com/PegueNumero/" + user.ID.Hex() + ".jpg"
+		user.AvatarURL = "https://s3.amazonaws.com/PegueNumero/" + user.ID.Hex() + ".jpg"
 		go uploadPhoto(user.ID.Hex(), requestData["AvatarData"].(string))
 	}
 
@@ -36,7 +37,7 @@ func CreateUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	w.Write(u)
 }
 
-func uploadPhoto(filename string, base64string string) {
+func uploadPhoto(filename string, base64string string) (resp *http.Response) {
 	photoData, err := base64.StdEncoding.DecodeString(base64string)
 	keys := s3.Keys{
 		AccessKey: "AKIAJZKKHSBMTOCKBVOA",
@@ -49,16 +50,17 @@ func uploadPhoto(filename string, base64string string) {
 	r.Header.Set("X-Amz-Acl", "public-read")
 	r.Header.Set("Content-Type", "image/jpeg")
 	s3.Sign(r, keys)
-	_, err = http.DefaultClient.Do(r)
+	resp, err = http.DefaultClient.Do(r)
 	if err != nil {
 		log.Fatal(err)
 	}
+	return resp
 }
 
 func GetUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	vars := mux.Vars(req)
 	id := vars["id"]
-	user, _ := Models.FindUserByID(id, ctx)
+	user, _ := models.FindUserByID(id, ctx)
 
 	u, _ := json.Marshal(user)
 	w.Write(u)
@@ -66,7 +68,7 @@ func GetUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 }
 
 func UpdateUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-	user := new(Models.User)
+	user := new(models.User)
 	decoder := json.NewDecoder(req.Body)
 	decoder.Decode(&user)
 
@@ -79,7 +81,8 @@ func UpdateUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 func DeleteUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	vars := mux.Vars(req)
 	id := vars["id"]
-	Models.DeleteUser(id, ctx)
+	log.Print(id)
+	models.DeleteUserWithID(id, ctx)
 
 	fmt.Fprint(w, "Deleted User")
 

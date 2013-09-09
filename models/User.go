@@ -1,4 +1,4 @@
-package Models
+package models
 
 import (
 	"code.google.com/p/go.crypto/bcrypt"
@@ -24,6 +24,13 @@ type User struct {
 	Fingerprint           string
 }
 
+func NewUser() *User {
+	return &User{
+		DateCreated: time.Now(),
+		ID:          bson.NewObjectId(),
+	}
+}
+
 //SetPassword takes a plaintext password and hashes it with bcrypt and sets the
 //password field to the hash.
 func (u *User) SetPassword(password string) {
@@ -34,26 +41,12 @@ func (u *User) SetPassword(password string) {
 	u.PwHash = hpass
 }
 
-func (u *User) SaveUserWithCtx(ctx *DB.Context) {
+func (u *User) SaveUserWithCtx(ctx *DB.Context) (err error){
 	coll := ctx.Database.C("users")
 	if _, err := coll.UpsertId(u.ID, &u); err != nil {
-		return
+		return err
 	}
-}
-
-func DeleteUser(id string, ctx *DB.Context) {
-	err := ctx.Database.C("users").RemoveId(bson.ObjectIdHex(id))
-	if err != nil {
-		log.Print(err)
-		return
-	}
-}
-
-func NewUser() *User {
-	return &User{
-		DateCreated: time.Now(),
-		ID:          bson.NewObjectId(),
-	}
+	return nil
 }
 
 func FindUserByEmail( email string, ctx *DB.Context) (u *User, err error) {
@@ -67,15 +60,24 @@ func FindUserByEmail( email string, ctx *DB.Context) (u *User, err error) {
 func FindUserByID( id string, ctx *DB.Context) (u *User, err error) {
 	err = ctx.Database.C("users").Find(bson.M{"_id": bson.ObjectIdHex(id)}).One(&u)
 	if err != nil {
-		return
+		return nil, err
 	}
-	return
+	return u, nil
 }
 
-func (u *User) PasswordIsValid(password string) {
+func DeleteUserWithID(id string, ctx *DB.Context) (err error){
+	err = ctx.Database.C("users").RemoveId(bson.ObjectIdHex(id))
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+	return nil
+}
+
+func (u *User) PasswordIsValid(password string) bool {
 	err := bcrypt.CompareHashAndPassword(u.PwHash, []byte(password))
 	if err != nil {
-		u = nil
+		return false
 	}
-	return
+	return true
 }
