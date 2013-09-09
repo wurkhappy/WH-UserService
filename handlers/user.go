@@ -1,4 +1,4 @@
-package Controllers
+package handlers
 
 import (
 	"bytes"
@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
-	// "github.com/gorilla/context"
 	"github.com/kr/s3"
 	"github.com/wurkhappy/WH-UserService/DB"
 	"github.com/wurkhappy/WH-UserService/models"
@@ -68,13 +67,25 @@ func GetUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 }
 
 func UpdateUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-	user := new(models.User)
-	decoder := json.NewDecoder(req.Body)
-	decoder.Decode(&user)
+	user := models.NewUser()
+
+	var requestData map[string]interface{}
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(req.Body)
+	json.Unmarshal(buf.Bytes(), &requestData)
+	json.Unmarshal(buf.Bytes(), &user)
+
+	user.SetPassword(requestData["Password"].(string))
+
+	if _, ok := requestData["AvatarData"]; ok {
+		user.AvatarURL = "https://s3.amazonaws.com/PegueNumero/" + user.ID.Hex() + ".jpg"
+		go uploadPhoto(user.ID.Hex(), requestData["AvatarData"].(string))
+	}
 
 	user.SaveUserWithCtx(ctx)
 
-	fmt.Print("{}")
+	u, _ := json.Marshal(user)
+	w.Write(u)
 
 }
 

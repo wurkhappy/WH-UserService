@@ -7,7 +7,7 @@ import (
 	// "github.com/gorilla/context"
 	// "github.com/gorilla/mux"
 	"github.com/wurkhappy/WH-UserService/DB"
-	"github.com/wurkhappy/WH-UserService/controllers"
+	"github.com/wurkhappy/WH-UserService/handlers"
 	"github.com/wurkhappy/WH-UserService/models"
 	"io"
 	"labix.org/v2/mgo"
@@ -55,7 +55,7 @@ func TestCreateUser(t *testing.T) {
 	ctx, _ := NewContext(req)
 	defer ctx.Close()
 
-	Controllers.CreateUser(record, req, ctx)
+	handlers.CreateUser(record, req, ctx)
 	if gotCode, wantCode := record.Code, 200; gotCode != wantCode {
 		t.Errorf("%s:%d RESULT: response code = %d", "Should respond with code", wantCode, gotCode)
 	}

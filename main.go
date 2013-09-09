@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/wurkhappy/WH-UserService/DB"
-	"github.com/wurkhappy/WH-UserService/controllers"
+	"github.com/wurkhappy/WH-UserService/handlers"
 	"labix.org/v2/mgo"
 	"net/http"
 )
@@ -21,10 +21,11 @@ func main() {
 	}
 	r := mux.NewRouter()
 	r.HandleFunc("/world", hello).Methods("GET")
-	r.Handle("/user", dbContextMixIn(Controllers.CreateUser)).Methods("POST")
-	r.Handle("/user/{id}", dbContextMixIn(Controllers.UpdateUser)).Methods("PUT")
-	r.Handle("/user/{id}", dbContextMixIn(Controllers.DeleteUser)).Methods("DELETE")
-	r.Handle("/user/{id}", dbContextMixIn(Controllers.GetUser)).Methods("GET")
+	r.Handle("/user", dbContextMixIn(handlers.CreateUser)).Methods("POST")
+	r.Handle("/user/login", dbContextMixIn(handlers.Login)).Methods("POST")
+	r.Handle("/user/{id}", dbContextMixIn(handlers.UpdateUser)).Methods("PUT")
+	r.Handle("/user/{id}", dbContextMixIn(handlers.DeleteUser)).Methods("DELETE")
+	r.Handle("/user/{id}", dbContextMixIn(handlers.GetUser)).Methods("GET")
 	http.Handle("/", r)
 
 	http.ListenAndServe(":3000", nil)
@@ -41,11 +42,5 @@ func (h dbContextMixIn) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	defer ctx.Close()
 
-	//run the handler and grab the error, and report it
 	h(w, req, ctx)
 }
-
-// I need to Dial the DB in main() and create a session.
-// That session needs to get passed to the handlers so that they can clone it.
-// Once it's cloned then we can do some ops
-// then we have to close the session
