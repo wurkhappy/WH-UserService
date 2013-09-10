@@ -75,8 +75,9 @@ func UpdateUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	json.Unmarshal(buf.Bytes(), &requestData)
 	json.Unmarshal(buf.Bytes(), &user)
 
-	user.SetPassword(requestData["Password"].(string))
-
+	if _, ok := requestData["Password"]; ok {
+		user.SetPassword(requestData["Password"].(string))
+	}
 	if _, ok := requestData["AvatarData"]; ok {
 		user.AvatarURL = "https://s3.amazonaws.com/PegueNumero/" + user.ID.Hex() + ".jpg"
 		go uploadPhoto(user.ID.Hex(), requestData["AvatarData"].(string))

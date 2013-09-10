@@ -34,7 +34,6 @@ func NewUser() *User {
 	return &User{
 		DateCreated: time.Now(),
 		ID:          bson.NewObjectId(),
-		Fingerprint: randString(8),
 	}
 }
 
@@ -56,13 +55,6 @@ func (u *User) SaveUserWithCtx(ctx *DB.Context) (err error) {
 	return nil
 }
 
-func (u *User) EndSession(ctx *DB.Context) (err error) {
-	coll := ctx.Database.C("users")
-	if _, err := coll.UpsertId(u.ID, &u); err != nil {
-		return err
-	}
-	return nil
-}
 
 func FindUserByEmail(email string, ctx *DB.Context) (u *User, err error) {
 	err = ctx.Database.C("users").Find(bson.M{"Email": email}).One(&u)
