@@ -22,7 +22,7 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/world", hello).Methods("GET")
 	r.Handle("/user", dbContextMixIn(handlers.CreateUser)).Methods("POST")
-	r.Handle("/user/login", dbContextMixIn(handlers.Login)).Methods("POST")
+	r.Handle("/auth/login", dbContextMixIn(handlers.Login)).Methods("POST")
 	r.Handle("/user/{id}", dbContextMixIn(handlers.UpdateUser)).Methods("PUT")
 	r.Handle("/user/{id}", dbContextMixIn(handlers.DeleteUser)).Methods("DELETE")
 	r.Handle("/user/{id}", dbContextMixIn(handlers.GetUser)).Methods("GET")
