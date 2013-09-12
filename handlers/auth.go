@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/gorilla/securecookie"
 	"github.com/wurkhappy/WH-UserService/models"
-	"http"
+	"net/http"
 	"time"
 )
 
