@@ -10,14 +10,14 @@ import (
 )
 
 type User struct {
-	ID          bson.ObjectId `bson:"_id"`
-	FirstName   string
-	LastName    string
-	Email       string
-	PwHash      []byte
-	AvatarURL   string
-	PhoneNumber string
-	DateCreated time.Time
+	ID          bson.ObjectId `json:"id" bson:"_id"`
+	FirstName   string        `json:"firstName"`
+	LastName    string        `json:"lastName"`
+	Email       string        `json:"email"`
+	PwHash      []byte        `json:"-"`
+	AvatarURL   string        `json:"avatarURL"`
+	PhoneNumber string        `json:"phoneNumber"`
+	DateCreated time.Time     `json:"dateCreated"`
 }
 
 func randString(n int) string {
@@ -55,13 +55,12 @@ func (u *User) SaveUserWithCtx(ctx *DB.Context) (err error) {
 	return nil
 }
 
-
 func FindUserByEmail(email string, ctx *DB.Context) (u *User, err error) {
-	err = ctx.Database.C("users").Find(bson.M{"Email": email}).One(&u)
+	err = ctx.Database.C("users").Find(bson.M{"email": email}).One(&u)
 	if err != nil {
 		return
 	}
-	return
+	return u, nil
 }
 
 func FindUserByID(id string, ctx *DB.Context) (u *User, err error) {

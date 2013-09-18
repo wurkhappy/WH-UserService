@@ -24,10 +24,15 @@ func Login(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(req.Body)
 	json.Unmarshal(buf.Bytes(), &requestData)
-	user, err := models.FindUserByEmail(requestData["Email"].(string), ctx)
+	user, _ := models.FindUserByEmail(requestData["email"].(string), ctx)
 
-	if !user.PasswordIsValid(requestData["Password"].(string)) {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if user == nil {
+		http.Error(w, "Account cannot be found", http.StatusBadRequest)
+		return
+	}
+
+	if !user.PasswordIsValid(requestData["password"].(string)) {
+		http.Error(w, "Invalid password", http.StatusBadRequest)
 		return
 	}
 

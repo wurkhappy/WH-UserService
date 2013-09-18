@@ -23,11 +23,17 @@ func CreateUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	json.Unmarshal(buf.Bytes(), &requestData)
 	json.Unmarshal(buf.Bytes(), &user)
 
-	user.SetPassword(requestData["Password"].(string))
+	test, _ := models.FindUserByEmail(requestData["email"].(string), ctx)
+	if test != nil {
+		http.Error(w, "email is already registered", http.StatusConflict)
+		return
+	}
 
-	if _, ok := requestData["AvatarData"]; ok {
+	user.SetPassword(requestData["password"].(string))
+
+	if _, ok := requestData["avatarData"]; ok {
 		user.AvatarURL = "https://s3.amazonaws.com/PegueNumero/" + user.ID.Hex() + ".jpg"
-		go uploadPhoto(user.ID.Hex(), requestData["AvatarData"].(string))
+		go uploadPhoto(user.ID.Hex(), requestData["avatarData"].(string))
 	}
 
 	user.SaveUserWithCtx(ctx)
