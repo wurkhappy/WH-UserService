@@ -105,3 +105,27 @@ func DeleteUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	fmt.Fprint(w, "Deleted User")
 
 }
+
+func SearchUsers(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
+	req.ParseForm()
+	var users []*models.User
+
+	//
+	if emails, ok := req.Form["email"]; ok {
+		for _, email := range emails {
+			user, _ := models.FindUserByEmail(email, ctx)
+
+			if create, ok := req.Form["create"]; ok && create[0] == "true" && user == nil{
+				user = models.NewUser()
+				user.Email = email
+				user.SaveUserWithCtx(ctx)
+			}
+			users = append(users, user)
+		}
+
+	}
+
+	u, _ := json.Marshal(users)
+	w.Write(u)
+
+}
