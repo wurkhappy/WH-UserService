@@ -24,9 +24,13 @@ func CreateUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	json.Unmarshal(buf.Bytes(), &user)
 
 	test, _ := models.FindUserByEmail(requestData["email"].(string), ctx)
-	if test != nil {
-		http.Error(w, "email is already registered", http.StatusConflict)
-		return
+	if test != nil{
+		if len(test.PwHash) > 0 {
+			http.Error(w, "email is already registered", http.StatusConflict)
+			return
+		} else {
+			user.ID = test.ID
+		}
 	}
 
 	user.SetPassword(requestData["password"].(string))
@@ -115,7 +119,7 @@ func SearchUsers(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 		for _, email := range emails {
 			user, _ := models.FindUserByEmail(email, ctx)
 
-			if create, ok := req.Form["create"]; ok && create[0] == "true" && user == nil{
+			if create, ok := req.Form["create"]; ok && create[0] == "true" && user == nil {
 				user = models.NewUser()
 				user.Email = email
 				user.SaveUserWithCtx(ctx)
@@ -123,6 +127,11 @@ func SearchUsers(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 			users = append(users, user)
 		}
 
+	}
+
+	if userIDs, ok := req.Form["userid"]; ok {
+		log.Print(userIDs)
+		users = models.FindUsers(userIDs, ctx)
 	}
 
 	u, _ := json.Marshal(users)

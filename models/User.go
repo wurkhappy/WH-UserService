@@ -80,6 +80,17 @@ func DeleteUserWithID(id string, ctx *DB.Context) (err error) {
 	return nil
 }
 
+func FindUsers(ids []string, ctx *DB.Context) []*User {
+	adjustedIDs := make([]bson.ObjectId, 0, len(ids))
+	for _, id := range ids {
+		adjustedIDs = append(adjustedIDs, bson.ObjectIdHex(id))
+	}
+	var users []*User
+	ctx.Database.C("users").Find(bson.M{"_id": bson.M{"$in": adjustedIDs}}).All(&users)
+
+	return users
+}
+
 func (u *User) PasswordIsValid(password string) bool {
 	err := bcrypt.CompareHashAndPassword(u.PwHash, []byte(password))
 	if err != nil {
