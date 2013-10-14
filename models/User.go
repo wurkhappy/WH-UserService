@@ -6,6 +6,7 @@ import (
 	"github.com/wurkhappy/WH-UserService/DB"
 	"labix.org/v2/mgo/bson"
 	"log"
+	"net/http"
 	"time"
 )
 
@@ -97,4 +98,12 @@ func (u *User) PasswordIsValid(password string) bool {
 		return false
 	}
 	return true
+}
+
+func (u *User) AddToPaymentProcessor() {
+	client := &http.Client{}
+	r, _ := http.NewRequest("POST", "http://localhost:3120/user/"+u.ID.Hex(), nil)
+	_, err := client.Do(r)
+	if err != nil {
+	}
 }
