@@ -24,6 +24,7 @@ func CreateUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	json.Unmarshal(buf.Bytes(), &user)
 
 	test, _ := models.FindUserByEmail(requestData["email"].(string), ctx)
+	log.Print(test)
 	if test != nil {
 		if len(test.PwHash) > 0 {
 			http.Error(w, "email is already registered", http.StatusConflict)

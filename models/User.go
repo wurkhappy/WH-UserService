@@ -27,7 +27,7 @@ type User struct {
 	AvatarURL   string        `json:"avatarURL"`
 	PhoneNumber string        `json:"phoneNumber"`
 	DateCreated time.Time     `json:"dateCreated"`
-	IsVerified  bool          `json:"isVerified`
+	IsVerified  bool          `json:"isVerified"`
 }
 
 func randString(n int) string {
