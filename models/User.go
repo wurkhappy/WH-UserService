@@ -2,7 +2,14 @@ package models
 
 import (
 	"code.google.com/p/go.crypto/bcrypt"
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"github.com/dchest/uniuri"
+	"github.com/streadway/amqp"
+	rbtmq "github.com/wurkhappy/Rabbitmq-go-wrapper"
 	"github.com/wurkhappy/WH-UserService/DB"
 	"labix.org/v2/mgo/bson"
 	"log"
@@ -12,6 +19,7 @@ import (
 
 type User struct {
 	ID          bson.ObjectId `json:"id" bson:"_id"`
+	Fingerprint string        `json:"-"`
 	FirstName   string        `json:"firstName"`
 	LastName    string        `json:"lastName"`
 	Email       string        `json:"email"`
@@ -19,6 +27,7 @@ type User struct {
 	AvatarURL   string        `json:"avatarURL"`
 	PhoneNumber string        `json:"phoneNumber"`
 	DateCreated time.Time     `json:"dateCreated"`
+	IsVerified  bool          `json:"isVerified`
 }
 
 func randString(n int) string {
@@ -35,6 +44,7 @@ func NewUser() *User {
 	return &User{
 		DateCreated: time.Now(),
 		ID:          bson.NewObjectId(),
+		Fingerprint: uniuri.New(),
 	}
 }
 
@@ -106,4 +116,41 @@ func (u *User) AddToPaymentProcessor() {
 	_, err := client.Do(r)
 	if err != nil {
 	}
+}
+
+func (u *User) CreateSignature(path string) string {
+	mac := hmac.New(sha256.New, []byte(u.Fingerprint))
+	mac.Write([]byte(path))
+	log.Print(path)
+	return hex.EncodeToString(mac.Sum(nil))
+}
+
+func (u *User) VerifySignature(path, signature string) bool {
+	mac := hmac.New(sha256.New, []byte(u.Fingerprint))
+	mac.Write([]byte(path))
+	log.Print(path)
+	log.Print(signature)
+
+	sigMAC, _ := hex.DecodeString(signature)
+	if !hmac.Equal(sigMAC, mac.Sum(nil)) {
+		return false
+	}
+	return true
+}
+
+func (u *User) SendVerificationEmail() {
+	message := map[string]interface{}{
+		"Method": "POST",
+		"Body":   u,
+	}
+	uri := "amqp://guest:guest@localhost:5672/"
+	connection, err := amqp.Dial(uri)
+	if err != nil {
+		panic(err)
+	}
+	defer connection.Close()
+
+	body, _ := json.Marshal(message)
+	publisher, _ := rbtmq.NewPublisher(connection, "email", "direct", "email", "/user/verify")
+	publisher.Publish(body, true)
 }

@@ -24,6 +24,11 @@ func main() {
 	r.Handle("/user", dbContextMixIn(handlers.CreateUser)).Methods("POST")
 	r.Handle("/user/search", dbContextMixIn(handlers.SearchUsers)).Methods("GET")
 	r.Handle("/auth/login", dbContextMixIn(handlers.Login)).Methods("POST")
+
+	//these two don't feel RESTful. Will have to think about it some more
+	r.Handle("/user/{id}/sign", dbContextMixIn(handlers.CreateSignature)).Methods("POST")
+	r.Handle("/user/{id}/sign/verify", dbContextMixIn(handlers.VerifySignature)).Methods("POST")
+
 	r.Handle("/user/{id}", dbContextMixIn(handlers.UpdateUser)).Methods("PUT")
 	r.Handle("/user/{id}", dbContextMixIn(handlers.DeleteUser)).Methods("DELETE")
 	r.Handle("/user/{id}", dbContextMixIn(handlers.GetUser)).Methods("GET")

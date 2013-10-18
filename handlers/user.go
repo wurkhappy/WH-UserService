@@ -40,8 +40,10 @@ func CreateUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 		go uploadPhoto(user.ID.Hex(), requestData["avatarData"].(string))
 	}
 
-	user.AddToPaymentProcessor();
+	user.AddToPaymentProcessor()
 	user.SaveUserWithCtx(ctx)
+
+	user.SendVerificationEmail()
 
 	u, _ := json.Marshal(user)
 	w.Write(u)

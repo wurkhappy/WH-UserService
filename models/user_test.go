@@ -10,6 +10,7 @@ func TestUnitTests(t *testing.T) {
 	testNewUser(t)
 	testSetPassword(t)
 	testPasswordIsValid(t)
+	testVerifySignature(t)
 }
 
 func TestIntegrationTests(t *testing.T) {
@@ -65,11 +66,17 @@ func testSaveUser(t *testing.T, ctx *DB.Context) {
 func testFindUserByEmail(t *testing.T, ctx *DB.Context) {
 	user := NewUser()
 	user.Email = "test@test.com"
-	user.SaveUserWithCtx(ctx)
+	err := user.SaveUserWithCtx(ctx)
+	if err != nil {
+		t.Errorf("%s--- error saving", "testFindUserByEmail")
+	}
 
-	u, _ := FindUserByEmail(user.Email, ctx)
+	u, err := FindUserByEmail(user.Email, ctx)
+	if err != nil {
+		t.Errorf("testFindUserByEmail--- error finding user %v", err)
+	}
 
-	if u != nil {
+	if u == nil {
 		t.Errorf("%s--- user was not found", "testFindUserByEmail")
 	}
 }
@@ -109,5 +116,14 @@ func testPasswordIsValid(t *testing.T) {
 
 	if !user.PasswordIsValid(password) {
 		t.Errorf("%s--- invalid password", "testPasswordIsValid")
+	}
+}
+
+func testVerifySignature(t *testing.T) {
+	path := "/test/path"
+	user := NewUser()
+	signature := user.CreateSignature(path)
+	if !user.VerifySignature(path, signature) {
+		t.Error("Signature not being verified")
 	}
 }
