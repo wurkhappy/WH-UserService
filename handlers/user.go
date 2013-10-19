@@ -150,3 +150,15 @@ func SearchUsers(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	w.Write(u)
 
 }
+
+func VerifyUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
+	vars := mux.Vars(req)
+	id := vars["id"]
+	user, _ := models.FindUserByID(id, ctx)
+
+	user.IsVerified = true
+	user.SaveUserWithCtx(ctx)
+
+	u, _ := json.Marshal(user)
+	w.Write(u)
+}

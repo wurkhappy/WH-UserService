@@ -63,9 +63,5 @@ func VerifySignature(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 		http.Error(w, "Invalid signature", http.StatusBadRequest)
 		return
 	}
-	user.IsVerified = true
-	user.SaveUserWithCtx(ctx)
-	u, _ := json.Marshal(user)
-	w.Write(u)
 
 }

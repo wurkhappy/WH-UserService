@@ -30,6 +30,7 @@ func main() {
 	r.Handle("/user/{id}/sign/verify", dbContextMixIn(handlers.VerifySignature)).Methods("POST")
 
 	r.Handle("/user/{id}", dbContextMixIn(handlers.UpdateUser)).Methods("PUT")
+	r.Handle("/user/{id}/verify", dbContextMixIn(handlers.VerifyUser)).Methods("POST")
 	r.Handle("/user/{id}", dbContextMixIn(handlers.DeleteUser)).Methods("DELETE")
 	r.Handle("/user/{id}", dbContextMixIn(handlers.GetUser)).Methods("GET")
 	http.Handle("/", r)
