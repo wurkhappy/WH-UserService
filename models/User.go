@@ -140,7 +140,6 @@ func (u *User) VerifySignature(path, signature string) bool {
 
 func (u *User) SendVerificationEmail() {
 	message := map[string]interface{}{
-		"Method": "POST",
 		"Body":   u,
 	}
 	uri := "amqp://guest:guest@localhost:5672/"
@@ -152,5 +151,21 @@ func (u *User) SendVerificationEmail() {
 
 	body, _ := json.Marshal(message)
 	publisher, _ := rbtmq.NewPublisher(connection, "email", "direct", "email", "/user/verify")
+	publisher.Publish(body, true)
+}
+
+func (u *User) SendNewPasswordEmail() {
+	message := map[string]interface{}{
+		"Body":   u,
+	}
+	uri := "amqp://guest:guest@localhost:5672/"
+	connection, err := amqp.Dial(uri)
+	if err != nil {
+		panic(err)
+	}
+	defer connection.Close()
+
+	body, _ := json.Marshal(message)
+	publisher, _ := rbtmq.NewPublisher(connection, "email", "direct", "email", "/user/password/forgot")
 	publisher.Publish(body, true)
 }
