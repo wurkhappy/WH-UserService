@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
+	"github.com/dchest/uniuri"
 	"github.com/kr/s3"
 	"github.com/wurkhappy/WH-UserService/DB"
 	"github.com/wurkhappy/WH-UserService/models"
@@ -14,27 +14,33 @@ import (
 	"time"
 )
 
-func CreateUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
+func CreateUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
+	var err error
 	user := models.NewUser()
 
 	var requestData map[string]interface{}
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(req.Body)
-	json.Unmarshal(buf.Bytes(), &requestData)
-	json.Unmarshal(buf.Bytes(), &user)
+	json.Unmarshal(body, &requestData)
+	json.Unmarshal(body, &user)
 
-	test, _ := models.FindUserByEmail(requestData["email"].(string), ctx)
-	log.Print(test)
-	if test != nil {
-		if len(test.PwHash) > 0 {
-			http.Error(w, "email is already registered", http.StatusConflict)
-			return
-		} else {
-			user.ID = test.ID
-		}
+	if user.Email == "" {
+		return nil, fmt.Errorf("%s", "Email cannot be blank"), http.StatusBadRequest
 	}
 
-	user.SetPassword(requestData["password"].(string))
+	err = user.SyncWithExistingInvitation(ctx)
+	if err != nil {
+		return nil, err, http.StatusConflict
+	}
+
+	pw, ok := requestData["password"].(string)
+	if !ok {
+		return nil, fmt.Errorf("%s", "Password cannot be blank"), http.StatusConflict
+	}
+
+	err = user.ValidateNewPassword(pw)
+	if err != nil {
+		return nil, err, http.StatusBadRequest
+	}
+	user.SetPassword(pw)
 
 	if _, ok := requestData["avatarData"]; ok {
 		user.AvatarURL = "https://s3.amazonaws.com/PegueNumero/" + user.ID.Hex() + ".jpg"
@@ -47,7 +53,7 @@ func CreateUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	user.SendVerificationEmail()
 
 	u, _ := json.Marshal(user)
-	w.Write(u)
+	return u, nil, http.StatusOK
 }
 
 func uploadPhoto(filename string, base64string string) (resp *http.Response) {
@@ -72,31 +78,31 @@ func uploadPhoto(filename string, base64string string) (resp *http.Response) {
 	return resp
 }
 
-func GetUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-	vars := mux.Vars(req)
-	id := vars["id"]
-	user, _ := models.FindUserByID(id, ctx)
+func GetUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
+	id := params["id"].(string)
+	user, err := models.FindUserByID(id, ctx)
+	if err != nil {
+		return nil, err, http.StatusBadRequest
+	}
 
 	u, _ := json.Marshal(user)
-	w.Write(u)
-
+	return u, nil, http.StatusOK
 }
 
-func UpdateUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-	vars := mux.Vars(req)
-	id := vars["id"]
-	user, _ := models.FindUserByID(id, ctx)
+func UpdateUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
+	id := params["id"].(string)
+	user, err := models.FindUserByID(id, ctx)
+	if err != nil {
+		return nil, err, http.StatusBadRequest
+	}
 
 	var requestData map[string]interface{}
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(req.Body)
-	json.Unmarshal(buf.Bytes(), &requestData)
-	json.Unmarshal(buf.Bytes(), &user)
+	json.Unmarshal(body, &requestData)
+	json.Unmarshal(body, &user)
 
 	if pw, ok := requestData["currentPassword"]; ok {
 		if !user.PasswordIsValid(pw.(string)) {
-			http.Error(w, "Invalid password", http.StatusBadRequest)
-			return
+			return nil, fmt.Errorf("%s", "Invalid password"), http.StatusBadRequest
 		}
 		user.SetPassword(requestData["newPassword"].(string))
 	}
@@ -108,30 +114,27 @@ func UpdateUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	user.SaveUserWithCtx(ctx)
 
 	u, _ := json.Marshal(user)
-	w.Write(u)
-
+	return u, nil, http.StatusOK
 }
 
-func DeleteUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-	vars := mux.Vars(req)
-	id := vars["id"]
-	log.Print(id)
-	models.DeleteUserWithID(id, ctx)
+func DeleteUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
+	id := params["id"].(string)
+	err := models.DeleteUserWithID(id, ctx)
+	if err != nil {
+		return nil, err, http.StatusBadRequest
+	}
 
-	fmt.Fprint(w, "Deleted User")
-
+	return nil, nil, http.StatusOK
 }
 
-func SearchUsers(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-	req.ParseForm()
+func SearchUsers(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
 	var users []*models.User
 
-	//
-	if emails, ok := req.Form["email"]; ok {
+	if emails, ok := params["email"].([]string); ok {
 		for _, email := range emails {
 			user, _ := models.FindUserByEmail(email, ctx)
 
-			if create, ok := req.Form["create"]; ok && create[0] == "true" && user == nil {
+			if create, ok := params["create"].([]string); ok && create[0] == "true" && user == nil {
 				user = models.NewUser()
 				user.Email = email
 				user.SaveUserWithCtx(ctx)
@@ -141,24 +144,32 @@ func SearchUsers(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 
 	}
 
-	if userIDs, ok := req.Form["userid"]; ok {
+	if userIDs, ok := params["userid"].([]string); ok {
 		log.Print(userIDs)
 		users = models.FindUsers(userIDs, ctx)
 	}
 
 	u, _ := json.Marshal(users)
-	w.Write(u)
-
+	return u, nil, http.StatusOK
 }
 
-func VerifyUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-	vars := mux.Vars(req)
-	id := vars["id"]
+func VerifyUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
+	id := params["id"].(string)
 	user, _ := models.FindUserByID(id, ctx)
 
 	user.IsVerified = true
 	user.SaveUserWithCtx(ctx)
 
 	u, _ := json.Marshal(user)
-	w.Write(u)
+	return u, nil, http.StatusOK
+}
+
+func ForgotPassword(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
+	email := params["email"].(string)
+	user, _ := models.FindUserByEmail(email, ctx)
+	pw := uniuri.New()
+	user.SetPassword(pw)
+	user.SendForgotPasswordEmail(pw)
+	user.SaveUserWithCtx(ctx)
+	return nil, nil, http.StatusOK
 }

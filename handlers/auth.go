@@ -1,67 +1,59 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
-	"github.com/gorilla/mux"
 	"github.com/wurkhappy/WH-UserService/DB"
 	"github.com/wurkhappy/WH-UserService/models"
 	"net/http"
+	"fmt"
 )
 
-func Login(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
+func Login(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
 	var requestData map[string]interface{}
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(req.Body)
-	json.Unmarshal(buf.Bytes(), &requestData)
+	json.Unmarshal(body, &requestData)
 	user, _ := models.FindUserByEmail(requestData["email"].(string), ctx)
 
 	if user == nil {
-		http.Error(w, "Account cannot be found", http.StatusBadRequest)
-		return
+		return nil, fmt.Errorf("%s", "Account cannot be found"), http.StatusBadRequest
 	}
 
 	if !user.PasswordIsValid(requestData["password"].(string)) {
-		http.Error(w, "Invalid password", http.StatusBadRequest)
-		return
+		return nil, fmt.Errorf("%s", "Invalid password"), http.StatusBadRequest
 	}
 
 	u, _ := json.Marshal(user)
-	w.Write(u)
-
+	return u, nil, http.StatusOK
 }
 
-func CreateSignature(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-	vars := mux.Vars(req)
-	id := vars["id"]
+func CreateSignature(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
+	id := params["id"].(string)
 	user, _ := models.FindUserByID(id, ctx)
 
 	var reqData map[string]interface{}
-	dec := json.NewDecoder(req.Body)
-	dec.Decode(&reqData)
+	json.Unmarshal(body, &reqData)
 
 	path := reqData["path"].(string)
 	str := user.CreateSignature(path)
 
-	w.Write([]byte(`{"signature":"` + str + `"}`))
+	return []byte(`{"signature":"` + str + `"}`), nil, http.StatusOK
 
 }
 
-func VerifySignature(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-	vars := mux.Vars(req)
-	id := vars["id"]
-	user, _ := models.FindUserByID(id, ctx)
+func VerifySignature(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
+	id := params["id"].(string)
+	user, err := models.FindUserByID(id, ctx)
+	if err != nil {
+		return nil, err, http.StatusBadRequest
+	}
 
 	var reqData map[string]interface{}
-	dec := json.NewDecoder(req.Body)
-	dec.Decode(&reqData)
+	json.Unmarshal(body, &reqData)
 
 	path := reqData["path"].(string)
 	signature := reqData["signature"].(string)
 
 	if !user.VerifySignature(path, signature) {
-		http.Error(w, "Invalid signature", http.StatusBadRequest)
-		return
+		return nil, fmt.Errorf("%s", "Invalid signature"), http.StatusBadRequest
 	}
-
+	return nil, nil, http.StatusOK
 }

@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"github.com/dchest/uniuri"
 	"github.com/streadway/amqp"
 	rbtmq "github.com/wurkhappy/Rabbitmq-go-wrapper"
@@ -19,7 +20,7 @@ import (
 
 type User struct {
 	ID          bson.ObjectId `json:"id" bson:"_id"`
-	Fingerprint string        `json:"-"`
+	Fingerprint string        `json:"-"` //used for signing requests
 	FirstName   string        `json:"firstName"`
 	LastName    string        `json:"lastName"`
 	Email       string        `json:"email"`
@@ -53,7 +54,7 @@ func NewUser() *User {
 func (u *User) SetPassword(password string) {
 	hpass, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		panic(err) //this is a panic because bcrypt errors on invalid costs
+		panic(err)
 	}
 	u.PwHash = hpass
 }
@@ -140,7 +141,7 @@ func (u *User) VerifySignature(path, signature string) bool {
 
 func (u *User) SendVerificationEmail() {
 	message := map[string]interface{}{
-		"Body":   u,
+		"Body": u,
 	}
 	uri := "amqp://guest:guest@localhost:5672/"
 	connection, err := amqp.Dial(uri)
@@ -154,9 +155,12 @@ func (u *User) SendVerificationEmail() {
 	publisher.Publish(body, true)
 }
 
-func (u *User) SendNewPasswordEmail() {
+func (u *User) SendForgotPasswordEmail(password string) {
 	message := map[string]interface{}{
-		"Body":   u,
+		"Body": map[string]interface{}{
+			"user":     u,
+			"password": password,
+		},
 	}
 	uri := "amqp://guest:guest@localhost:5672/"
 	connection, err := amqp.Dial(uri)
@@ -168,4 +172,30 @@ func (u *User) SendNewPasswordEmail() {
 	body, _ := json.Marshal(message)
 	publisher, _ := rbtmq.NewPublisher(connection, "email", "direct", "email", "/user/password/forgot")
 	publisher.Publish(body, true)
+}
+
+func (u *User) ValidateNewPassword(pw string) error {
+	if len(pw) < 6 {
+		return fmt.Errorf("%s", "Password length too short")
+	}
+	return nil
+}
+
+func (u *User) IsUserRegistered() bool {
+	if len(u.PwHash) > 0 {
+		return true
+	}
+	return false
+}
+
+func (u *User) SyncWithExistingInvitation(ctx *DB.Context) error {
+	test, _ := FindUserByEmail(u.Email, ctx)
+	if test != nil {
+		if test.IsUserRegistered() {
+			return fmt.Errorf("%s", "Email is already registered")
+		} else {
+			u.ID = test.ID
+		}
+	}
+	return nil
 }

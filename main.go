@@ -1,17 +1,13 @@
 package main
 
 import (
-	"fmt"
-	"github.com/gorilla/mux"
+	"bytes"
 	"github.com/wurkhappy/WH-UserService/DB"
-	"github.com/wurkhappy/WH-UserService/handlers"
 	"labix.org/v2/mgo"
 	"net/http"
+	"strconv"
+	"log"
 )
-
-func hello(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(w, "Hello, %s!", req.URL.Path[1:])
-}
 
 func main() {
 	var err error
@@ -19,35 +15,45 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	r := mux.NewRouter()
-	r.HandleFunc("/world", hello).Methods("GET")
-	r.Handle("/user", dbContextMixIn(handlers.CreateUser)).Methods("POST")
-	r.Handle("/user/search", dbContextMixIn(handlers.SearchUsers)).Methods("GET")
-	r.Handle("/auth/login", dbContextMixIn(handlers.Login)).Methods("POST")
+	router.Start()
 
-	//these two don't feel RESTful. Will have to think about it some more
-	r.Handle("/user/{id}/sign", dbContextMixIn(handlers.CreateSignature)).Methods("POST")
-	r.Handle("/user/{id}/sign/verify", dbContextMixIn(handlers.VerifySignature)).Methods("POST")
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		//set up the db so we can pass it to handlers
+		ctx, err := DB.NewContext(r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer ctx.Close()
 
-	r.Handle("/user/{id}", dbContextMixIn(handlers.UpdateUser)).Methods("PUT")
-	r.Handle("/user/{id}/verify", dbContextMixIn(handlers.VerifyUser)).Methods("POST")
-	r.Handle("/user/{id}", dbContextMixIn(handlers.DeleteUser)).Methods("DELETE")
-	r.Handle("/user/{id}", dbContextMixIn(handlers.GetUser)).Methods("GET")
-	http.Handle("/", r)
+		//route to function based on the path and method
+		route, pathParams, _ := router.FindRoute(r.URL.String())
+		routeMap := route.Dest.(map[string]interface{})
+		handler := routeMap[r.Method].(func(map[string]interface{}, []byte, *DB.Context) ([]byte, error, int))
 
+		//parse the request
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(r.Body)
+
+		//add url params to params var
+		params := make(map[string]interface{})
+		for key, value := range pathParams {
+			params[key] = value
+		}
+		//add url query params
+		values := r.URL.Query()
+		for key, value := range values {
+			params[key] = value
+		}
+
+		//run handler and do standard http stuff(write JSON, return err, set status code)
+		jsonData, err, statusCode := handler(params, buf.Bytes(), ctx)
+		if err != nil {
+			http.Error(w, `{"status_code":"`+strconv.Itoa(statusCode)+`", "description":"`+err.Error()+`"}`, statusCode)
+			return
+		}
+		w.WriteHeader(statusCode)
+		w.Write(jsonData)
+	})
 	http.ListenAndServe(":3000", nil)
-}
-
-type dbContextMixIn func(http.ResponseWriter, *http.Request, *DB.Context)
-
-func (h dbContextMixIn) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	//create the context
-	ctx, err := DB.NewContext(req)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer ctx.Close()
-
-	h(w, req, ctx)
 }
