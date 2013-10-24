@@ -123,9 +123,10 @@ func testPasswordIsValid(t *testing.T) {
 func testVerifySignature(t *testing.T) {
 	path := "/test/path"
 	expiration := int(time.Now().Unix())
+	method := "POST"
 	user := NewUser()
-	signature := user.CreateSignature(path, expiration)
-	if !user.VerifySignature(path, expiration, signature) {
+	signature := user.CreateSignature(path, expiration, method)
+	if !user.VerifySignature(path, expiration, method, signature) {
 		t.Error("Signature not being verified")
 	}
 }

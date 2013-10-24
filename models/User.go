@@ -120,16 +120,16 @@ func (u *User) AddToPaymentProcessor() {
 	}
 }
 
-func (u *User) CreateSignature(path string, expiration int) string {
+func (u *User) CreateSignature(path string, expiration int, method string) string {
 	mac := hmac.New(sha256.New, []byte(u.Fingerprint))
-	mac.Write([]byte(path + strconv.Itoa(expiration)))
+	mac.Write([]byte(path + strconv.Itoa(expiration) + method))
 	log.Print(path)
 	return hex.EncodeToString(mac.Sum(nil))
 }
 
-func (u *User) VerifySignature(path string, expiration int, signature string) bool {
+func (u *User) VerifySignature(path string, expiration int, method string, signature string) bool {
 	mac := hmac.New(sha256.New, []byte(u.Fingerprint))
-	mac.Write([]byte(path + strconv.Itoa(expiration)))
+	mac.Write([]byte(path + strconv.Itoa(expiration) + method))
 
 	sigMAC, _ := hex.DecodeString(signature)
 	if !hmac.Equal(sigMAC, mac.Sum(nil)) {
@@ -154,11 +154,10 @@ func (u *User) SendVerificationEmail() {
 	publisher.Publish(body, true)
 }
 
-func (u *User) SendForgotPasswordEmail(password string) {
+func (u *User) SendForgotPasswordEmail() {
 	message := map[string]interface{}{
 		"Body": map[string]interface{}{
 			"user":     u,
-			"password": password,
 		},
 	}
 	uri := "amqp://guest:guest@localhost:5672/"

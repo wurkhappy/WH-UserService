@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/dchest/uniuri"
 	"github.com/kr/s3"
 	"github.com/wurkhappy/WH-UserService/DB"
 	"github.com/wurkhappy/WH-UserService/models"
@@ -165,11 +164,43 @@ func VerifyUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]
 }
 
 func ForgotPassword(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
-	email := params["email"].(string)
-	user, _ := models.FindUserByEmail(email, ctx)
-	pw := uniuri.New()
-	user.SetPassword(pw)
-	user.SendForgotPasswordEmail(pw)
+	data := struct {
+		Email string `json:"email"`
+	}{}
+	json.Unmarshal(body, &data)
+	if data.Email == "" {
+		return nil, fmt.Errorf("%s", "Email cannot be blank"), http.StatusBadRequest
+	}
+
+	user, err := models.FindUserByEmail(data.Email, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("%s", "There was an error searching for that email"), http.StatusBadRequest
+	}
+
+	user.SendForgotPasswordEmail()
+	return nil, nil, http.StatusOK
+}
+
+func NewPassword(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
+	var data struct {
+		ID       string `json:"id"`
+		Password string `json:"password"`
+		Confirm  string `json:"confirm"`
+	}
+	data.ID = params["id"].(string)
+
+	json.Unmarshal(body, &data)
+
+	user, err := models.FindUserByID(data.ID, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("%s", "There was an error searching for that user"), http.StatusBadRequest
+	}
+
+	if data.Password != data.Confirm {
+		return nil, fmt.Errorf("%s", "Passwords do not match"), http.StatusBadRequest
+	}
+	user.SetPassword(data.Password)
 	user.SaveUserWithCtx(ctx)
+
 	return nil, nil, http.StatusOK
 }

@@ -45,6 +45,12 @@ var router urlrouter.Router = urlrouter.Router{
 			},
 		},
 		urlrouter.Route{
+			PathExp: "/user/:id/password",
+			Dest: map[string]interface{}{
+				"PUT": handlers.NewPassword,
+			},
+		},
+		urlrouter.Route{
 			PathExp: "/user/:id",
 			Dest: map[string]interface{}{
 				"PUT":    handlers.UpdateUser,

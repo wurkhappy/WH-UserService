@@ -34,8 +34,9 @@ func CreateSignature(params map[string]interface{}, body []byte, ctx *DB.Context
 
 	path := reqData["path"].(string)
 	expiration := reqData["expiration"].(float64)
+	method := reqData["method"].(string)
 	exp := int(expiration)
-	str := user.CreateSignature(path, exp)
+	str := user.CreateSignature(path, exp, method)
 
 	return []byte(`{"signature":"` + str + `"}`), nil, http.StatusOK
 
@@ -54,8 +55,9 @@ func VerifySignature(params map[string]interface{}, body []byte, ctx *DB.Context
 	path := reqData["path"].(string)
 	expiration := reqData["expiration"].(int)
 	signature := reqData["signature"].(string)
+	method := reqData["method"].(string)
 
-	if !user.VerifySignature(path, expiration, signature) {
+	if !user.VerifySignature(path, expiration, method, signature) {
 		return nil, fmt.Errorf("%s", "Invalid signature"), http.StatusBadRequest
 	}
 	return nil, nil, http.StatusOK
