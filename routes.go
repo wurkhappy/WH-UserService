@@ -27,18 +27,6 @@ var router urlrouter.Router = urlrouter.Router{
 			},
 		},
 		urlrouter.Route{
-			PathExp: "/user/:id/sign/verify",
-			Dest: map[string]interface{}{
-				"POST": handlers.VerifySignature,
-			},
-		},
-		urlrouter.Route{
-			PathExp: "/user/:id/sign",
-			Dest: map[string]interface{}{
-				"POST": handlers.CreateSignature,
-			},
-		},
-		urlrouter.Route{
 			PathExp: "/user/:id/verify",
 			Dest: map[string]interface{}{
 				"POST": handlers.VerifyUser,

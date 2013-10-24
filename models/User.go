@@ -2,13 +2,8 @@ package models
 
 import (
 	"code.google.com/p/go.crypto/bcrypt"
-	"crypto/hmac"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/dchest/uniuri"
 	"github.com/streadway/amqp"
 	rbtmq "github.com/wurkhappy/Rabbitmq-go-wrapper"
 	"github.com/wurkhappy/WH-UserService/DB"
@@ -16,12 +11,10 @@ import (
 	"log"
 	"net/http"
 	"time"
-	"strconv"
 )
 
 type User struct {
 	ID          bson.ObjectId `json:"id" bson:"_id"`
-	Fingerprint string        `json:"-"` //used for signing requests
 	FirstName   string        `json:"firstName"`
 	LastName    string        `json:"lastName"`
 	Email       string        `json:"email"`
@@ -32,21 +25,10 @@ type User struct {
 	IsVerified  bool          `json:"isVerified"`
 }
 
-func randString(n int) string {
-	const alphanum = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-	var bytes = make([]byte, n)
-	rand.Read(bytes)
-	for i, b := range bytes {
-		bytes[i] = alphanum[b%byte(len(alphanum))]
-	}
-	return string(bytes)
-}
-
 func NewUser() *User {
 	return &User{
 		DateCreated: time.Now(),
 		ID:          bson.NewObjectId(),
-		Fingerprint: uniuri.New(),
 	}
 }
 
@@ -118,24 +100,6 @@ func (u *User) AddToPaymentProcessor() {
 	_, err := client.Do(r)
 	if err != nil {
 	}
-}
-
-func (u *User) CreateSignature(path string, expiration int, method string) string {
-	mac := hmac.New(sha256.New, []byte(u.Fingerprint))
-	mac.Write([]byte(path + strconv.Itoa(expiration) + method))
-	log.Print(path)
-	return hex.EncodeToString(mac.Sum(nil))
-}
-
-func (u *User) VerifySignature(path string, expiration int, method string, signature string) bool {
-	mac := hmac.New(sha256.New, []byte(u.Fingerprint))
-	mac.Write([]byte(path + strconv.Itoa(expiration) + method))
-
-	sigMAC, _ := hex.DecodeString(signature)
-	if !hmac.Equal(sigMAC, mac.Sum(nil)) {
-		return false
-	}
-	return true
 }
 
 func (u *User) SendVerificationEmail() {
