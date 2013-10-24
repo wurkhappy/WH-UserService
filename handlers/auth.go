@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/wurkhappy/WH-UserService/DB"
 	"github.com/wurkhappy/WH-UserService/models"
 	"net/http"
-	"fmt"
 )
 
 func Login(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
@@ -33,7 +33,9 @@ func CreateSignature(params map[string]interface{}, body []byte, ctx *DB.Context
 	json.Unmarshal(body, &reqData)
 
 	path := reqData["path"].(string)
-	str := user.CreateSignature(path)
+	expiration := reqData["expiration"].(float64)
+	exp := int(expiration)
+	str := user.CreateSignature(path, exp)
 
 	return []byte(`{"signature":"` + str + `"}`), nil, http.StatusOK
 
@@ -50,9 +52,10 @@ func VerifySignature(params map[string]interface{}, body []byte, ctx *DB.Context
 	json.Unmarshal(body, &reqData)
 
 	path := reqData["path"].(string)
+	expiration := reqData["expiration"].(int)
 	signature := reqData["signature"].(string)
 
-	if !user.VerifySignature(path, signature) {
+	if !user.VerifySignature(path, expiration, signature) {
 		return nil, fmt.Errorf("%s", "Invalid signature"), http.StatusBadRequest
 	}
 	return nil, nil, http.StatusOK

@@ -16,6 +16,7 @@ import (
 	"log"
 	"net/http"
 	"time"
+	"strconv"
 )
 
 type User struct {
@@ -119,18 +120,16 @@ func (u *User) AddToPaymentProcessor() {
 	}
 }
 
-func (u *User) CreateSignature(path string) string {
+func (u *User) CreateSignature(path string, expiration int) string {
 	mac := hmac.New(sha256.New, []byte(u.Fingerprint))
-	mac.Write([]byte(path))
+	mac.Write([]byte(path + strconv.Itoa(expiration)))
 	log.Print(path)
 	return hex.EncodeToString(mac.Sum(nil))
 }
 
-func (u *User) VerifySignature(path, signature string) bool {
+func (u *User) VerifySignature(path string, expiration int, signature string) bool {
 	mac := hmac.New(sha256.New, []byte(u.Fingerprint))
-	mac.Write([]byte(path))
-	log.Print(path)
-	log.Print(signature)
+	mac.Write([]byte(path + strconv.Itoa(expiration)))
 
 	sigMAC, _ := hex.DecodeString(signature)
 	if !hmac.Equal(sigMAC, mac.Sum(nil)) {

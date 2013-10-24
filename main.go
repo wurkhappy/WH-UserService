@@ -6,7 +6,6 @@ import (
 	"labix.org/v2/mgo"
 	"net/http"
 	"strconv"
-	"log"
 )
 
 func main() {

@@ -4,6 +4,7 @@ import (
 	"github.com/wurkhappy/WH-UserService/DB"
 	"labix.org/v2/mgo"
 	"testing"
+	"time"
 )
 
 func TestUnitTests(t *testing.T) {
@@ -121,9 +122,10 @@ func testPasswordIsValid(t *testing.T) {
 
 func testVerifySignature(t *testing.T) {
 	path := "/test/path"
+	expiration := int(time.Now().Unix())
 	user := NewUser()
-	signature := user.CreateSignature(path)
-	if !user.VerifySignature(path, signature) {
+	signature := user.CreateSignature(path, expiration)
+	if !user.VerifySignature(path, expiration, signature) {
 		t.Error("Signature not being verified")
 	}
 }
