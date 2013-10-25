@@ -42,8 +42,8 @@ func CreateUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]
 	user.SetPassword(pw)
 
 	if _, ok := requestData["avatarData"]; ok {
-		user.AvatarURL = "https://s3.amazonaws.com/PegueNumero/" + user.ID.Hex() + ".jpg"
-		go uploadPhoto(user.ID.Hex(), requestData["avatarData"].(string))
+		user.AvatarURL = "https://s3.amazonaws.com/PegueNumero/" + user.ID + ".jpg"
+		go uploadPhoto(user.ID, requestData["avatarData"].(string))
 	}
 
 	user.AddToPaymentProcessor()
@@ -106,8 +106,8 @@ func UpdateUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]
 		user.SetPassword(requestData["newPassword"].(string))
 	}
 	if _, ok := requestData["avatarData"]; ok {
-		user.AvatarURL = "https://s3.amazonaws.com/PegueNumero/" + user.ID.Hex() + ".jpg"
-		go uploadPhoto(user.ID.Hex(), requestData["avatarData"].(string))
+		user.AvatarURL = "https://s3.amazonaws.com/PegueNumero/" + user.ID + ".jpg"
+		go uploadPhoto(user.ID, requestData["avatarData"].(string))
 	}
 
 	user.SaveUserWithCtx(ctx)
