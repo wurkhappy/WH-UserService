@@ -119,7 +119,9 @@ func (u *User) AddToPaymentProcessor() {
 
 func (u *User) SendVerificationEmail() {
 	message := map[string]interface{}{
-		"Body": u,
+		"Body": map[string]interface{}{
+			"user": u,
+		},
 	}
 	body, _ := json.Marshal(message)
 	sendEmail("/user/verify", body)
