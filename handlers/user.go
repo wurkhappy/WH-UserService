@@ -44,6 +44,8 @@ func CreateUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]
 	if _, ok := requestData["avatarData"]; ok {
 		user.AvatarURL = "https://s3.amazonaws.com/PegueNumero/" + user.ID + ".jpg"
 		go uploadPhoto(user.ID, requestData["avatarData"].(string))
+	} else {
+		user.AvatarURL = "http://localhost:4000/img/default_photo.jpg"
 	}
 
 	user.AddToPaymentProcessor()
@@ -73,7 +75,6 @@ func uploadPhoto(filename string, base64string string) (resp *http.Response) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Print(resp)
 	return resp
 }
 
@@ -144,7 +145,6 @@ func SearchUsers(params map[string]interface{}, body []byte, ctx *DB.Context) ([
 	}
 
 	if userIDs, ok := params["userid"].([]string); ok {
-		log.Print(userIDs)
 		users = models.FindUsers(userIDs, ctx)
 	}
 
