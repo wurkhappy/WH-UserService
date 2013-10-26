@@ -6,6 +6,7 @@ import (
 	"github.com/wurkhappy/WH-UserService/DB"
 	"github.com/wurkhappy/WH-UserService/models"
 	"net/http"
+	"log"
 )
 
 func Login(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
@@ -20,7 +21,9 @@ func Login(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte,
 	if !user.PasswordIsValid(requestData["password"].(string)) {
 		return nil, fmt.Errorf("%s", "Invalid password"), http.StatusBadRequest
 	}
+	log.Print(user.Email)
 
-	u, _ := json.Marshal(user)
+	u, err := json.Marshal(user)
+	log.Print(err)
 	return u, nil, http.StatusOK
 }

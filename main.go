@@ -6,7 +6,7 @@ import (
 	"labix.org/v2/mgo"
 	"net/http"
 	"strconv"
-	// "log"
+	"log"
 )
 
 func main() {
@@ -52,6 +52,7 @@ func main() {
 			http.Error(w, `{"status_code":"`+strconv.Itoa(statusCode)+`", "description":"`+err.Error()+`"}`, statusCode)
 			return
 		}
+		log.Print(string(jsonData))
 		w.WriteHeader(statusCode)
 		w.Write(jsonData)
 	})
