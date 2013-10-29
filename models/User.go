@@ -26,6 +26,7 @@ type User struct {
 	IsVerified  bool      `json:"isVerified"`
 }
 
+var PaymentInfoService string = "http://localhost:3120"
 var connection *amqp.Connection
 var emailExchange string = "email"
 var emailQueue string = "email"
@@ -111,7 +112,7 @@ func (u *User) PasswordIsValid(password string) bool {
 
 func (u *User) AddToPaymentProcessor() {
 	client := &http.Client{}
-	r, _ := http.NewRequest("POST", "http://localhost:3120/user/"+u.ID, nil)
+	r, _ := http.NewRequest("POST", PaymentInfoService+"/user/"+u.ID, nil)
 	_, err := client.Do(r)
 	if err != nil {
 	}

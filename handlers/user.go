@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+var WebServerURL string = "http://localhost:4000"
+
 func CreateUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
 	var err error
 	user := models.NewUser()
@@ -45,7 +47,7 @@ func CreateUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]
 		user.AvatarURL = "https://s3.amazonaws.com/PegueNumero/" + user.ID + ".jpg"
 		go uploadPhoto(user.ID, requestData["avatarData"].(string))
 	} else {
-		user.AvatarURL = "http://localhost:4000/img/default_photo.jpg"
+		user.AvatarURL = WebServerURL + "/img/default_photo.jpg"
 	}
 
 	user.AddToPaymentProcessor()
