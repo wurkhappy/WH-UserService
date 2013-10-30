@@ -139,6 +139,7 @@ func SearchUsers(params map[string]interface{}, body []byte, ctx *DB.Context) ([
 			if create, ok := params["create"].([]string); ok && create[0] == "true" && user == nil {
 				user = models.NewUser()
 				user.Email = email
+				user.AvatarURL = WebServerURL + "/img/default_photo.jpg"
 				user.SaveUserWithCtx(ctx)
 			}
 			users = append(users, user)

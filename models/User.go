@@ -143,7 +143,7 @@ func sendEmail(path string, body []byte) error {
 	if err != nil {
 		return err
 	}
-	publisher.Publish(body, true)
+	publisher.Publish(body, false)
 	return nil
 }
 
