@@ -3,13 +3,17 @@ package models
 import (
 	"encoding/json"
 	"github.com/wurkhappy/WH-UserService/DB"
-	"labix.org/v2/mgo"
+	// "labix.org/v2/mgo"
 	"testing"
+	// "log"
 )
 
 func init() {
 	emailExchange = "test"
 	emailQueue = "test"
+	DB.Name = "testdb"
+	DB.Setup()
+	DB.CreateStatements()
 }
 
 func TestUnitTests(t *testing.T) {
@@ -22,26 +26,17 @@ func TestUnitTests(t *testing.T) {
 
 func TestIntegrationTests(t *testing.T) {
 	if !testing.Short() {
-		DB.Session, _ = mgo.Dial(DB.Config["DBURL"])
-		ctx := &DB.Context{
-			Database: DB.Session.Clone().DB("TestUserDB"),
-		}
-		defer ctx.Close()
-		defer ClearDB(ctx)
 
-		testSaveUser(t, ctx)
-		testFindUserByEmail(t, ctx)
-		testFindUserByID(t, ctx)
-		testDeleteUser(t, ctx)
-		testFindUsers(t, ctx)
-		testSyncWithExistingInvitation(t, ctx)
+		testSaveUser(t)
+		testFindUserByEmail(t)
+		testFindUserByID(t)
+		testDeleteUser(t)
+		testFindUsers(t)
+		testSyncWithExistingInvitation(t)
 		testsendEmail(t)
-	}
-}
 
-//helpers
-func ClearDB(ctx *DB.Context) {
-	ctx.Database.C("users").DropCollection()
+		DB.DB.Exec("DELETE from wh_user")
+	}
 }
 
 func testInit(t *testing.T) {
@@ -74,24 +69,24 @@ func testSetPassword(t *testing.T) {
 	}
 }
 
-func testSaveUser(t *testing.T, ctx *DB.Context) {
+func testSaveUser(t *testing.T) {
 	user := NewUser()
-	err := user.SaveUserWithCtx(ctx)
+	err := user.Save()
 
 	if err != nil {
 		t.Errorf("%s--- error is:%v", "testSaveUser", err)
 	}
 }
 
-func testFindUserByEmail(t *testing.T, ctx *DB.Context) {
+func testFindUserByEmail(t *testing.T) {
 	user := NewUser()
 	user.Email = "test@test.com"
-	err := user.SaveUserWithCtx(ctx)
+	err := user.Save()
 	if err != nil {
 		t.Errorf("%s--- error saving", "testFindUserByEmail")
 	}
 
-	u, err := FindUserByEmail(user.Email, ctx)
+	u, err := FindUserByEmail(user.Email)
 	if err != nil {
 		t.Errorf("testFindUserByEmail--- error finding user %v", err)
 	}
@@ -100,51 +95,59 @@ func testFindUserByEmail(t *testing.T, ctx *DB.Context) {
 		t.Errorf("%s--- user was not found", "testFindUserByEmail")
 	}
 
-	_, err = FindUserByEmail("badrequest@bad.com", ctx)
+	_, err = FindUserByEmail("badrequest@bad.com")
 	if err == nil {
 		t.Errorf("%s--- DB returned a bad request", "testFindUserByEmail")
 	}
 }
 
-func testFindUserByID(t *testing.T, ctx *DB.Context) {
+func testFindUserByID(t *testing.T) {
 	user := NewUser()
-	user.SaveUserWithCtx(ctx)
+	user.Save()
 
-	u, _ := FindUserByID(user.ID, ctx)
+	u, err := FindUserByID(user.ID)
+	if err != nil {
+		t.Errorf("testFindUserByID--- error finding user %v", err)
+	}
 
-	if len(u.ID) == 0 {
+	if u == nil {
 		t.Errorf("%s--- user was not found", "testFindUserByID")
+	}
+
+	_, err = FindUserByID("invalidID")
+	if err == nil {
+		t.Errorf("%s--- DB returned a bad request", "testFindUserByID")
 	}
 }
 
-func testDeleteUser(t *testing.T, ctx *DB.Context) {
+func testDeleteUser(t *testing.T) {
 	user := NewUser()
-	user.SaveUserWithCtx(ctx)
-	err := DeleteUserWithID(user.ID, ctx)
+	user.Save()
+	err := DeleteUserWithID(user.ID)
 
 	if err != nil {
 		t.Errorf("%s--- error is:%v", "testDeleteUser", err)
 	}
 
-	u, err := FindUserByID(user.ID, ctx)
+	u, err := FindUserByID(user.ID)
 	if u != nil {
 		t.Errorf("%s--- user was found", "testDeleteUser")
 	}
 
-	err = DeleteUserWithID("invalid-id", ctx)
+	err = DeleteUserWithID("invalid-id")
 	if err == nil {
 		t.Errorf("%s--- DB deleted with invalid id", "testDeleteUser")
 	}
 }
 
-func testFindUsers(t *testing.T, ctx *DB.Context) {
+func testFindUsers(t *testing.T) {
 	user1 := NewUser()
 	user2 := NewUser()
 
-	user1.SaveUserWithCtx(ctx)
-	user2.SaveUserWithCtx(ctx)
+	user1.Save()
+	user2.Save()
 
-	users := FindUsers([]string{user1.ID, user2.ID}, ctx)
+	users := FindUsers([]string{user1.ID, user2.ID})
 	if len(users) != 2 {
 		t.Errorf("%s--- all users were not found", "testFindUsers")
 	}
@@ -188,14 +191,14 @@ func testIsUserRegistered(t *testing.T) {
 	}
 }
 
-func testSyncWithExistingInvitation(t *testing.T, ctx *DB.Context) {
+func testSyncWithExistingInvitation(t *testing.T) {
 	user := NewUser()
 	user.Email = "testSyncWithExistingInvitation@wh.com"
-	user.SaveUserWithCtx(ctx)
+	user.Save()
 
 	user2 := new(User)
 	user2.Email = user.Email
-	err := user2.SyncWithExistingInvitation(ctx)
+	err := user2.SyncWithExistingInvitation()
 	if err != nil {
 		t.Errorf("%s--- didn't sync user", "testSyncWithExistingInvitation")
 	}
@@ -204,11 +207,11 @@ func testSyncWithExistingInvitation(t *testing.T, ctx *DB.Context) {
 	}
 
 	user.SetPassword("password")
-	user.SaveUserWithCtx(ctx)
+	user.Save()
 
 	user3 := new(User)
 	user3.Email = user.Email
-	err = user3.SyncWithExistingInvitation(ctx)
+	err = user3.SyncWithExistingInvitation()
 	if err == nil {
 		t.Errorf("%s--- failed to reject registered user", "testSyncWithExistingInvitation")
 	}

@@ -5,46 +5,31 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/nu7hatch/gouuid"
-	"github.com/streadway/amqp"
 	rbtmq "github.com/wurkhappy/Rabbitmq-go-wrapper"
 	"github.com/wurkhappy/WH-UserService/DB"
-	"labix.org/v2/mgo/bson"
-	// "log"
+	// "labix.org/v2/mgo/bson"
+	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
 type User struct {
 	ID          string    `json:"id" bson:"_id"`
-	FirstName   string    `json:"firstName"`
-	LastName    string    `json:"lastName"`
+	FirstName   string    `json:"firstName,omitempty"`
+	LastName    string    `json:"lastName,omitempty"`
 	Email       string    `json:"email"`
 	PwHash      []byte    `json:"-"`
 	AvatarURL   string    `json:"avatarURL"`
-	PhoneNumber string    `json:"phoneNumber"`
+	PhoneNumber string    `json:"phoneNumber,omitempty"`
 	DateCreated time.Time `json:"dateCreated"`
 	IsVerified  bool      `json:"isVerified"`
-}
-
-var PaymentInfoService string = "http://localhost:3120"
-var connection *amqp.Connection
-var emailExchange string = "email"
-var emailQueue string = "email"
-
-func init() {
-	var err error
-	uri := "amqp://guest:guest@localhost:5672/"
-	connection, err = amqp.Dial(uri)
-	if err != nil {
-		panic(err)
-	}
 }
 
 func NewUser() *User {
 	id, _ := uuid.NewV4()
 	return &User{
-		DateCreated: time.Now(),
-		ID:          id.String(),
+		ID: id.String(),
 	}
 }
 
@@ -59,6 +44,92 @@ func (u *User) SetPassword(password string) error {
 	return nil
 }
 
+func (u *User) Save() (err error) {
+
+	// if u.DateCreated.IsZero() {
+	// 	u.DateCreated = time.Now()
+	// 	jsonByte, _ := json.Marshal(u)
+	// 	_, err = DB.SaveUser.Exec(u.ID, u.PwHash, string(jsonByte))
+	// 	if err != nil {
+	// 		log.Print(err)
+	// 		return err
+	// 	}
+	// } else {
+	// 	jsonByte, _ := json.Marshal(u)
+	// 	_, err = DB.UpdateUser.Exec(u.ID, u.PwHash, string(jsonByte))
+	// 	if err != nil {
+	// 		log.Print(err)
+	// 		return err
+	// 	}
+	// }
+	jsonByte, _ := json.Marshal(u)
+	_, err = DB.UpsertUser.Query(u.ID, u.PwHash, string(jsonByte))
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+	return nil
+}
+
+func FindUserByEmail(email string) (u *User, err error) {
+	var s string
+	var b []byte
+	err = DB.FindUserByEmail.QueryRow(email).Scan(&b, &s)
+	if err != nil {
+		return nil, err
+	}
+	json.Unmarshal([]byte(s), &u)
+	u.PwHash = b
+	return u, nil
+}
+
+func FindUserByID(id string) (u *User, err error) {
+	var s string
+	var b []byte
+	err = DB.FindUserByID.QueryRow(id).Scan(&b, &s)
+	if err != nil {
+		return nil, err
+	}
+	json.Unmarshal([]byte(s), &u)
+	u.PwHash = b
+	return u, nil
+}
+
+func DeleteUserWithID(id string) (err error) {
+	_, err = DB.DeleteUser.Exec(id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func FindUsers(ids []string) []*User {
+	for _, id := range ids {
+		_, err := uuid.ParseHex(id)
+		if err != nil {
+			return nil
+		}
+	}
+	var users []*User
+	r, err := DB.FindUsers.Query("{" + strings.Join(ids, ",") + "}")
+	if err != nil {
+		log.Print(err)
+	}
+	defer r.Close()
+
+	for r.Next() {
+		var s string
+		err = r.Scan(&s)
+		if err != nil {
+			log.Print(err)
+		}
+		var u *User
+		json.Unmarshal([]byte(s), &u)
+		users = append(users, u)
+	}
+	return users
+}
+
 func (u *User) SaveUserWithCtx(ctx *DB.Context) (err error) {
 	coll := ctx.Database.C("users")
 	if _, err := coll.UpsertId(u.ID, &u); err != nil {
@@ -67,40 +138,40 @@ func (u *User) SaveUserWithCtx(ctx *DB.Context) (err error) {
 	return nil
 }
 
-func FindUserByEmail(email string, ctx *DB.Context) (u *User, err error) {
-	err = ctx.Database.C("users").Find(bson.M{"email": email}).One(&u)
-	if err != nil {
-		return
-	}
-	return u, nil
-}
+// func FindUserByEmail(email string, ctx *DB.Context) (u *User, err error) {
+// 	err = ctx.Database.C("users").Find(bson.M{"email": email}).One(&u)
+// 	if err != nil {
+// 		return
+// 	}
+// 	return u, nil
+// }
 
-func FindUserByID(id string, ctx *DB.Context) (u *User, err error) {
-	err = ctx.Database.C("users").Find(bson.M{"_id": id}).One(&u)
-	if err != nil {
-		return nil, err
-	}
-	return u, nil
-}
+// func FindUserByID(id string, ctx *DB.Context) (u *User, err error) {
+// 	err = ctx.Database.C("users").Find(bson.M{"_id": id}).One(&u)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return u, nil
+// }
 
-func DeleteUserWithID(id string, ctx *DB.Context) (err error) {
-	err = ctx.Database.C("users").RemoveId(id)
-	if err != nil {
-		return err
-	}
-	return nil
-}
+// func DeleteUserWithID(id string, ctx *DB.Context) (err error) {
+// 	err = ctx.Database.C("users").RemoveId(id)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
 
-func FindUsers(ids []string, ctx *DB.Context) []*User {
-	adjustedIDs := make([]string, 0, len(ids))
-	for _, id := range ids {
-		adjustedIDs = append(adjustedIDs, id)
-	}
-	var users []*User
-	ctx.Database.C("users").Find(bson.M{"_id": bson.M{"$in": adjustedIDs}}).All(&users)
+// func FindUsers(ids []string, ctx *DB.Context) []*User {
+// 	adjustedIDs := make([]string, 0, len(ids))
+// 	for _, id := range ids {
+// 		adjustedIDs = append(adjustedIDs, id)
+// 	}
+// 	var users []*User
+// 	ctx.Database.C("users").Find(bson.M{"_id": bson.M{"$in": adjustedIDs}}).All(&users)
 
-	return users
-}
+// 	return users
+// }
 
 func (u *User) PasswordIsValid(password string) bool {
 	err := bcrypt.CompareHashAndPassword(u.PwHash, []byte(password))
@@ -161,8 +232,8 @@ func (u *User) IsUserRegistered() bool {
 	return false
 }
 
-func (u *User) SyncWithExistingInvitation(ctx *DB.Context) error {
-	test, _ := FindUserByEmail(u.Email, ctx)
+func (u *User) SyncWithExistingInvitation() error {
+	test, _ := FindUserByEmail(u.Email)
 	if test != nil {
 		if test.IsUserRegistered() {
 			return fmt.Errorf("%s", "Email is already registered")

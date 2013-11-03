@@ -27,7 +27,7 @@ func CreateUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]
 		return nil, fmt.Errorf("%s", "Email cannot be blank"), http.StatusBadRequest
 	}
 
-	err = user.SyncWithExistingInvitation(ctx)
+	err = user.SyncWithExistingInvitation()
 	if err != nil {
 		return nil, err, http.StatusConflict
 	}
@@ -50,9 +50,9 @@ func CreateUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]
 		user.AvatarURL = WebServerURL + "/img/default_photo.jpg"
 	}
 
-	user.AddToPaymentProcessor()
-	user.SaveUserWithCtx(ctx)
+	user.Save()
 
+	user.AddToPaymentProcessor()
 	user.SendVerificationEmail()
 
 	u, _ := json.Marshal(user)
@@ -82,7 +82,7 @@ func uploadPhoto(filename string, base64string string) (resp *http.Response) {
 
 func GetUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
 	id := params["id"].(string)
-	user, err := models.FindUserByID(id, ctx)
+	user, err := models.FindUserByID(id)
 	if err != nil {
 		return nil, err, http.StatusBadRequest
 	}
@@ -93,7 +93,7 @@ func GetUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byt
 
 func UpdateUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
 	id := params["id"].(string)
-	user, err := models.FindUserByID(id, ctx)
+	user, err := models.FindUserByID(id)
 	if err != nil {
 		return nil, err, http.StatusBadRequest
 	}
@@ -113,7 +113,7 @@ func UpdateUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]
 		go uploadPhoto(user.ID, requestData["avatarData"].(string))
 	}
 
-	user.SaveUserWithCtx(ctx)
+	user.Save()
 
 	u, _ := json.Marshal(user)
 	return u, nil, http.StatusOK
@@ -121,7 +121,7 @@ func UpdateUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]
 
 func DeleteUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
 	id := params["id"].(string)
-	err := models.DeleteUserWithID(id, ctx)
+	err := models.DeleteUserWithID(id)
 	if err != nil {
 		return nil, err, http.StatusBadRequest
 	}
@@ -134,13 +134,13 @@ func SearchUsers(params map[string]interface{}, body []byte, ctx *DB.Context) ([
 
 	if emails, ok := params["email"].([]string); ok {
 		for _, email := range emails {
-			user, _ := models.FindUserByEmail(email, ctx)
+			user, _ := models.FindUserByEmail(email)
 
 			if create, ok := params["create"].([]string); ok && create[0] == "true" && user == nil {
 				user = models.NewUser()
 				user.Email = email
 				user.AvatarURL = WebServerURL + "/img/default_photo.jpg"
-				user.SaveUserWithCtx(ctx)
+				user.Save()
 			}
 			users = append(users, user)
 		}
@@ -148,7 +148,7 @@ func SearchUsers(params map[string]interface{}, body []byte, ctx *DB.Context) ([
 	}
 
 	if userIDs, ok := params["userid"].([]string); ok {
-		users = models.FindUsers(userIDs, ctx)
+		users = models.FindUsers(userIDs)
 	}
 
 	u, _ := json.Marshal(users)
@@ -157,10 +157,10 @@ func SearchUsers(params map[string]interface{}, body []byte, ctx *DB.Context) ([
 
 func VerifyUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
 	id := params["id"].(string)
-	user, _ := models.FindUserByID(id, ctx)
+	user, _ := models.FindUserByID(id)
 
 	user.IsVerified = true
-	user.SaveUserWithCtx(ctx)
+	user.Save()
 
 	u, _ := json.Marshal(user)
 	return u, nil, http.StatusOK
@@ -175,7 +175,7 @@ func ForgotPassword(params map[string]interface{}, body []byte, ctx *DB.Context)
 		return nil, fmt.Errorf("%s", "Email cannot be blank"), http.StatusBadRequest
 	}
 
-	user, err := models.FindUserByEmail(data.Email, ctx)
+	user, err := models.FindUserByEmail(data.Email)
 	if err != nil {
 		return nil, fmt.Errorf("%s", "There was an error searching for that email"), http.StatusBadRequest
 	}
@@ -194,7 +194,7 @@ func NewPassword(params map[string]interface{}, body []byte, ctx *DB.Context) ([
 
 	json.Unmarshal(body, &data)
 
-	user, err := models.FindUserByID(data.ID, ctx)
+	user, err := models.FindUserByID(data.ID)
 	if err != nil {
 		return nil, fmt.Errorf("%s", "There was an error searching for that user"), http.StatusBadRequest
 	}
@@ -203,7 +203,7 @@ func NewPassword(params map[string]interface{}, body []byte, ctx *DB.Context) ([
 		return nil, fmt.Errorf("%s", "Passwords do not match"), http.StatusBadRequest
 	}
 	user.SetPassword(data.Password)
-	user.SaveUserWithCtx(ctx)
+	user.Save()
 
 	return nil, nil, http.StatusOK
 }

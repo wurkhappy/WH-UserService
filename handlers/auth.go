@@ -12,7 +12,7 @@ import (
 func Login(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
 	var requestData map[string]interface{}
 	json.Unmarshal(body, &requestData)
-	user, _ := models.FindUserByEmail(requestData["email"].(string), ctx)
+	user, _ := models.FindUserByEmail(requestData["email"].(string))
 
 	if user == nil {
 		return nil, fmt.Errorf("%s", "Account cannot be found"), http.StatusBadRequest
