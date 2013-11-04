@@ -33,8 +33,6 @@ func NewUser() *User {
 	}
 }
 
-//SetPassword takes a plaintext password and hashes it with bcrypt and sets the
-//password field to the hash.
 func (u *User) SetPassword(password string) error {
 	hpass, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -45,23 +43,6 @@ func (u *User) SetPassword(password string) error {
 }
 
 func (u *User) Save() (err error) {
-
-	// if u.DateCreated.IsZero() {
-	// 	u.DateCreated = time.Now()
-	// 	jsonByte, _ := json.Marshal(u)
-	// 	_, err = DB.SaveUser.Exec(u.ID, u.PwHash, string(jsonByte))
-	// 	if err != nil {
-	// 		log.Print(err)
-	// 		return err
-	// 	}
-	// } else {
-	// 	jsonByte, _ := json.Marshal(u)
-	// 	_, err = DB.UpdateUser.Exec(u.ID, u.PwHash, string(jsonByte))
-	// 	if err != nil {
-	// 		log.Print(err)
-	// 		return err
-	// 	}
-	// }
 	jsonByte, _ := json.Marshal(u)
 	_, err = DB.UpsertUser.Query(u.ID, u.PwHash, string(jsonByte))
 	if err != nil {
@@ -137,41 +118,6 @@ func (u *User) SaveUserWithCtx(ctx *DB.Context) (err error) {
 	}
 	return nil
 }
-
-// func FindUserByEmail(email string, ctx *DB.Context) (u *User, err error) {
-// 	err = ctx.Database.C("users").Find(bson.M{"email": email}).One(&u)
-// 	if err != nil {
-// 		return
-// 	}
-// 	return u, nil
-// }
-
-// func FindUserByID(id string, ctx *DB.Context) (u *User, err error) {
-// 	err = ctx.Database.C("users").Find(bson.M{"_id": id}).One(&u)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return u, nil
-// }
-
-// func DeleteUserWithID(id string, ctx *DB.Context) (err error) {
-// 	err = ctx.Database.C("users").RemoveId(id)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
-
-// func FindUsers(ids []string, ctx *DB.Context) []*User {
-// 	adjustedIDs := make([]string, 0, len(ids))
-// 	for _, id := range ids {
-// 		adjustedIDs = append(adjustedIDs, id)
-// 	}
-// 	var users []*User
-// 	ctx.Database.C("users").Find(bson.M{"_id": bson.M{"$in": adjustedIDs}}).All(&users)
-
-// 	return users
-// }
 
 func (u *User) PasswordIsValid(password string) bool {
 	err := bcrypt.CompareHashAndPassword(u.PwHash, []byte(password))
