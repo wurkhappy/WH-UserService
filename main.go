@@ -2,11 +2,15 @@ package main
 
 import (
 	"bytes"
+	"github.com/wurkhappy/WH-Config"
+	"github.com/wurkhappy/WH-UserService/models"
 	"net/http"
 	"strconv"
 )
 
 func main() {
+	config.Prod()
+	models.Setup()
 	router.Start()
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +37,7 @@ func main() {
 		//run handler and do standard http stuff(write JSON, return err, set status code)
 		jsonData, err, statusCode := handler(params, buf.Bytes())
 		if err != nil {
-			http.Error(w, `{"status_code":"`+strconv.Itoa(statusCode)+`", "description":"`+err.Error()+`"}`, statusCode)
+			http.Error(w, `{"status_code":`+strconv.Itoa(statusCode)+`, "description":"`+err.Error()+`"}`, statusCode)
 			return
 		}
 		w.WriteHeader(statusCode)

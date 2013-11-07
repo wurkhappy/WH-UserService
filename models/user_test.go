@@ -2,15 +2,15 @@ package models
 
 import (
 	"encoding/json"
+	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-UserService/DB"
-	// "labix.org/v2/mgo"
 	"testing"
 	// "log"
 )
 
 func init() {
-	emailExchange = "test"
-	emailQueue = "test"
+	config.Test()
+	Setup()
 	DB.Name = "testdb"
 	DB.Setup()
 	DB.CreateStatements()

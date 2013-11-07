@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/nu7hatch/gouuid"
 	rbtmq "github.com/wurkhappy/Rabbitmq-go-wrapper"
+	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-UserService/DB"
 	// "labix.org/v2/mgo/bson"
 	"log"
@@ -121,7 +122,7 @@ func (u *User) PasswordIsValid(password string) bool {
 
 func (u *User) AddToPaymentProcessor() {
 	client := &http.Client{}
-	r, _ := http.NewRequest("POST", PaymentInfoService+"/user/"+u.ID, nil)
+	r, _ := http.NewRequest("POST", config.PaymentInfoService+"/user/"+u.ID, nil)
 	_, err := client.Do(r)
 	if err != nil {
 	}
@@ -148,7 +149,7 @@ func (u *User) SendForgotPasswordEmail() {
 }
 
 func sendEmail(path string, body []byte) error {
-	publisher, err := rbtmq.NewPublisher(connection, emailExchange, "direct", emailQueue, path)
+	publisher, err := rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, path)
 	if err != nil {
 		return err
 	}

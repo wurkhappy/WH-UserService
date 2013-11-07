@@ -1,25 +1,15 @@
 package models
 
 import (
-	// "database/sql"
-	// _ "github.com/bmizerany/pq"
 	"github.com/streadway/amqp"
-	// "log"
+	"github.com/wurkhappy/WH-Config"
 )
 
-var PaymentInfoService string = "http://localhost:3120"
 var connection *amqp.Connection
-var emailExchange string = "email"
-var emailQueue string = "email"
 
-func init() {
-	setup()
-}
-
-func setup() {
+func Setup() {
 	var err error
-	uri := "amqp://guest:guest@localhost:5672/"
-	connection, err = amqp.Dial(uri)
+	connection, err = amqp.Dial(config.EmailURI)
 	if err != nil {
 		panic(err)
 	}
