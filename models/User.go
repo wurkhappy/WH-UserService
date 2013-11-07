@@ -111,14 +111,6 @@ func FindUsers(ids []string) []*User {
 	return users
 }
 
-func (u *User) SaveUserWithCtx(ctx *DB.Context) (err error) {
-	coll := ctx.Database.C("users")
-	if _, err := coll.UpsertId(u.ID, &u); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (u *User) PasswordIsValid(password string) bool {
 	err := bcrypt.CompareHashAndPassword(u.PwHash, []byte(password))
 	if err != nil {

@@ -3,13 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/wurkhappy/WH-UserService/DB"
 	"github.com/wurkhappy/WH-UserService/models"
 	"net/http"
 	// "log"
 )
 
-func Login(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
+func Login(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	var requestData map[string]interface{}
 	json.Unmarshal(body, &requestData)
 	user, _ := models.FindUserByEmail(requestData["email"].(string))

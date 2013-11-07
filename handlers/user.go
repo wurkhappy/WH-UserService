@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/kr/s3"
-	"github.com/wurkhappy/WH-UserService/DB"
 	"github.com/wurkhappy/WH-UserService/models"
 	"log"
 	"net/http"
@@ -15,7 +14,7 @@ import (
 
 var WebServerURL string = "http://localhost:4000"
 
-func CreateUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
+func CreateUser(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	var err error
 	user := models.NewUser()
 
@@ -80,7 +79,7 @@ func uploadPhoto(filename string, base64string string) (resp *http.Response) {
 	return resp
 }
 
-func GetUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
+func GetUser(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	id := params["id"].(string)
 	user, err := models.FindUserByID(id)
 	if err != nil {
@@ -91,7 +90,7 @@ func GetUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byt
 	return u, nil, http.StatusOK
 }
 
-func UpdateUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
+func UpdateUser(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	id := params["id"].(string)
 	user, err := models.FindUserByID(id)
 	if err != nil {
@@ -119,7 +118,7 @@ func UpdateUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]
 	return u, nil, http.StatusOK
 }
 
-func DeleteUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
+func DeleteUser(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	id := params["id"].(string)
 	err := models.DeleteUserWithID(id)
 	if err != nil {
@@ -129,7 +128,7 @@ func DeleteUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]
 	return nil, nil, http.StatusOK
 }
 
-func SearchUsers(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
+func SearchUsers(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	var users []*models.User
 
 	if emails, ok := params["email"].([]string); ok {
@@ -155,7 +154,7 @@ func SearchUsers(params map[string]interface{}, body []byte, ctx *DB.Context) ([
 	return u, nil, http.StatusOK
 }
 
-func VerifyUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
+func VerifyUser(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	id := params["id"].(string)
 	user, _ := models.FindUserByID(id)
 
@@ -166,7 +165,7 @@ func VerifyUser(params map[string]interface{}, body []byte, ctx *DB.Context) ([]
 	return u, nil, http.StatusOK
 }
 
-func ForgotPassword(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
+func ForgotPassword(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	data := struct {
 		Email string `json:"email"`
 	}{}
@@ -184,7 +183,7 @@ func ForgotPassword(params map[string]interface{}, body []byte, ctx *DB.Context)
 	return nil, nil, http.StatusOK
 }
 
-func NewPassword(params map[string]interface{}, body []byte, ctx *DB.Context) ([]byte, error, int) {
+func NewPassword(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	var data struct {
 		ID       string `json:"id"`
 		Password string `json:"password"`
