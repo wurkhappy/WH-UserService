@@ -206,3 +206,5 @@ func NewPassword(params map[string]interface{}, body []byte) ([]byte, error, int
 
 	return nil, nil, http.StatusOK
 }
+
+

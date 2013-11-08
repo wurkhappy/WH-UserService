@@ -22,7 +22,7 @@ func init() {
 
 func generateEmail() string {
 	number := rand.Int()
-	return strconv.Itoa(number)
+	return strconv.Itoa(number) + "@test.com"
 }
 
 func Test(t *testing.T) {
@@ -31,7 +31,12 @@ func Test(t *testing.T) {
 	test_UpdateUser(t)
 	test_DeleteUser(t)
 	test_SearchUsers(t)
+	test_VerifyUser(t)
+	test_ForgotPassword(t)
+	test_NewPassword(t)
+	test_Login(t)
 	DB.DB.Exec("DELETE from wh_user")
+	defer DB.DB.Close()
 }
 
 func test_CreateUser(t *testing.T) {
@@ -48,7 +53,7 @@ func test_CreateUser(t *testing.T) {
 
 	//
 	bodyData := map[string]interface{}{
-		"email": generateEmail() + "@test.com",
+		"email": generateEmail(),
 	}
 	body, _ := json.Marshal(bodyData)
 	_, err, statusCode = CreateUser(params, body)
@@ -61,7 +66,7 @@ func test_CreateUser(t *testing.T) {
 
 	//
 	bodyData = map[string]interface{}{
-		"email":    generateEmail() + "@test.com",
+		"email":    generateEmail(),
 		"password": "short",
 	}
 	body, _ = json.Marshal(bodyData)
@@ -75,7 +80,7 @@ func test_CreateUser(t *testing.T) {
 
 	//
 	bodyData = map[string]interface{}{
-		"email":    generateEmail() + "@test.com",
+		"email":    generateEmail(),
 		"password": "short",
 	}
 	body, _ = json.Marshal(bodyData)
@@ -89,7 +94,7 @@ func test_CreateUser(t *testing.T) {
 
 	//
 	bodyData = map[string]interface{}{
-		"email":    generateEmail() + "@test.com",
+		"email":    generateEmail(),
 		"password": "password",
 	}
 	body, _ = json.Marshal(bodyData)
@@ -132,7 +137,7 @@ func test_GetUser(t *testing.T) {
 	//
 	params = map[string]interface{}{}
 	bodyData = map[string]interface{}{
-		"email":    generateEmail() + "@test.com",
+		"email":    generateEmail(),
 		"password": "password",
 	}
 	body, _ = json.Marshal(bodyData)
@@ -172,7 +177,7 @@ func test_UpdateUser(t *testing.T) {
 	//
 	params = map[string]interface{}{}
 	bodyData = map[string]interface{}{
-		"email":    generateEmail() + "@test.com",
+		"email":    generateEmail(),
 		"password": "password",
 	}
 	body, _ = json.Marshal(bodyData)
@@ -237,7 +242,7 @@ func test_DeleteUser(t *testing.T) {
 	//
 	params = map[string]interface{}{}
 	bodyData = map[string]interface{}{
-		"email":    generateEmail() + "@test.com",
+		"email":    generateEmail(),
 		"password": "password",
 	}
 	body, _ = json.Marshal(bodyData)
@@ -265,7 +270,7 @@ func test_SearchUsers(t *testing.T) {
 	//
 	params := map[string]interface{}{}
 	bodyData = map[string]interface{}{
-		"email":    generateEmail() + "@test.com",
+		"email":    generateEmail(),
 		"password": "password",
 	}
 	body, _ = json.Marshal(bodyData)
@@ -317,4 +322,191 @@ func test_SearchUsers(t *testing.T) {
 		t.Error("created user wasn't given an id")
 	}
 
+}
+
+func test_VerifyUser(t *testing.T) {
+	var statusCode int
+	var resp []byte
+	var bodyData map[string]interface{}
+	var body []byte
+
+	//
+	params := map[string]interface{}{}
+	bodyData = map[string]interface{}{
+		"email":    generateEmail(),
+		"password": "password",
+	}
+	body, _ = json.Marshal(bodyData)
+	resp, _, _ = CreateUser(params, body)
+	var user *models.User
+	json.Unmarshal(resp, &user)
+
+	params["id"] = user.ID
+	resp, _, statusCode = VerifyUser(params, []byte(""))
+	var user2 *models.User
+	json.Unmarshal(resp, &user2)
+	if statusCode >= 400 {
+		t.Error("wrong status code returned")
+	}
+	if !user2.IsVerified {
+		t.Error("user wasn't verified")
+	}
+}
+
+func test_ForgotPassword(t *testing.T) {
+	var err error
+	var statusCode int
+	var bodyData map[string]interface{}
+	var body []byte
+
+	//
+	params := map[string]interface{}{}
+	bodyData = map[string]interface{}{
+		"email": "",
+	}
+	body, _ = json.Marshal(bodyData)
+	_, err, statusCode = ForgotPassword(params, body)
+	if err == nil {
+		t.Error("blank email didn't return error")
+	}
+	if statusCode < 400 {
+		t.Error("wrong status code returned")
+	}
+
+	//
+	bodyData = map[string]interface{}{
+		"email": generateEmail(),
+	}
+	body, _ = json.Marshal(bodyData)
+	_, err, statusCode = ForgotPassword(params, body)
+	if err == nil {
+		t.Error("non-user email didn't return error")
+	}
+	if statusCode < 400 {
+		t.Error("wrong status code returned")
+	}
+
+	//
+	params = map[string]interface{}{}
+	bodyData = map[string]interface{}{
+		"email":    generateEmail(),
+		"password": "password",
+	}
+	body, _ = json.Marshal(bodyData)
+	_, _, _ = CreateUser(params, body)
+
+	_, err, statusCode = ForgotPassword(params, body)
+	if err != nil {
+		t.Error("error finding user")
+	}
+	if statusCode >= 400 {
+		t.Error("wrong status code returned")
+	}
+}
+
+func test_NewPassword(t *testing.T) {
+	var err error
+	var statusCode int
+	var resp []byte
+	var bodyData map[string]interface{}
+	var body []byte
+
+	//
+	//
+	params := map[string]interface{}{
+		"id": "invalidid",
+	}
+	_, err, statusCode = NewPassword(params, []byte(""))
+	if err == nil {
+		t.Error("invalid id didn't return error")
+	}
+	if statusCode < 400 {
+		t.Error("wrong status code returned")
+	}
+
+	//
+	params = map[string]interface{}{}
+	bodyData = map[string]interface{}{
+		"email":    generateEmail(),
+		"password": "password",
+	}
+	body, _ = json.Marshal(bodyData)
+	resp, _, _ = CreateUser(params, body)
+	var user *models.User
+	json.Unmarshal(resp, &user)
+
+	params["id"] = user.ID
+	bodyData["confirm"] = "otherpassword"
+	body, _ = json.Marshal(bodyData)
+	_, _, statusCode = NewPassword(params, body)
+	if err == nil {
+		t.Error("conflicting passwords didn't return error")
+	}
+	if statusCode < 400 {
+		t.Error("wrong status code returned")
+	}
+
+	params["id"] = user.ID
+	bodyData["confirm"] = bodyData["password"].(string)
+	body, _ = json.Marshal(bodyData)
+	_, err, statusCode = NewPassword(params, body)
+	if err != nil {
+		t.Errorf("valid params returned error:  %s", err.Error())
+	}
+	if statusCode >= 400 {
+		t.Error("wrong status code returned")
+	}
+}
+
+func test_Login(t *testing.T) {
+	var err error
+	var statusCode int
+	// var resp []byte
+	var bodyData map[string]interface{}
+	var body []byte
+
+	//
+	//
+	params := map[string]interface{}{}
+	bodyData = map[string]interface{}{
+		"email": generateEmail(),
+	}
+	body, _ = json.Marshal(bodyData)
+	_, err, statusCode = Login(params, body)
+	if err == nil {
+		t.Error("invalid id didn't return error")
+	}
+	if statusCode < 400 {
+		t.Error("wrong status code returned")
+	}
+
+	//
+	params = map[string]interface{}{}
+	originalPassword := "password"
+	bodyData = map[string]interface{}{
+		"email":    generateEmail(),
+		"password": originalPassword,
+	}
+	body, _ = json.Marshal(bodyData)
+	CreateUser(params, body)
+
+	bodyData["password"] = "otherpassword"
+	body, _ = json.Marshal(bodyData)
+	_, _, statusCode = Login(params, body)
+	if err == nil {
+		t.Error("bad password didn't return error")
+	}
+	if statusCode < 400 {
+		t.Error("wrong status code returned")
+	}
+
+	bodyData["password"] = originalPassword
+	body, _ = json.Marshal(bodyData)
+	_, err, statusCode = Login(params, body)
+	if err != nil {
+		t.Errorf("correct password returned error: %s", err.Error())
+	}
+	if statusCode >= 400 {
+		t.Error("wrong status code returned")
+	}
 }
