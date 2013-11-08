@@ -8,7 +8,6 @@ import (
 	rbtmq "github.com/wurkhappy/Rabbitmq-go-wrapper"
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-UserService/DB"
-	// "labix.org/v2/mgo/bson"
 	"log"
 	"net/http"
 	"strings"
