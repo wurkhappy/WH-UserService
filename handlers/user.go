@@ -43,7 +43,7 @@ func CreateUser(params map[string]interface{}, body []byte) ([]byte, error, int)
 	user.SetPassword(pw)
 
 	if _, ok := requestData["avatarData"]; ok {
-		user.AvatarURL = "https://s3.amazonaws.com/PegueNumero/" + user.ID + ".jpg"
+		user.AvatarURL = "https://d3kq8dzp7eezz0.cloudfront.net/user/" + user.ID + ".jpg"
 		go uploadPhoto(user.ID, requestData["avatarData"].(string))
 	} else {
 		user.AvatarURL = WebServerURL + "/img/default_photo.jpg"
@@ -62,11 +62,11 @@ func uploadPhoto(filename string, base64string string) (resp *http.Response) {
 	inputFmt := base64string[23 : len(base64string)-1]
 	photoData, err := base64.StdEncoding.DecodeString(inputFmt)
 	keys := s3.Keys{
-		AccessKey: "AKIAJZKKHSBMTOCKBVOA",
-		SecretKey: "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",
+		AccessKey: "AKIAI2PQ6CTNJJAUMV3Q",
+		SecretKey: "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",
 	}
 	data := bytes.NewBuffer(photoData)
-	r, _ := http.NewRequest("PUT", "https://s3.amazonaws.com/PegueNumero/"+filename+".jpg", data)
+	r, _ := http.NewRequest("PUT", "https://s3.amazonaws.com/media.wurkhappy.com/user/"+filename+".jpg", data)
 	r.ContentLength = int64(data.Len())
 	r.Header.Set("Date", time.Now().UTC().Format(http.TimeFormat))
 	r.Header.Set("X-Amz-Acl", "public-read")
@@ -108,7 +108,7 @@ func UpdateUser(params map[string]interface{}, body []byte) ([]byte, error, int)
 		user.SetPassword(requestData["newPassword"].(string))
 	}
 	if _, ok := requestData["avatarData"]; ok {
-		user.AvatarURL = "https://s3.amazonaws.com/PegueNumero/" + user.ID + ".jpg"
+		user.AvatarURL = "https://d3kq8dzp7eezz0.cloudfront.net/user/" + user.ID + ".jpg"
 		go uploadPhoto(user.ID, requestData["avatarData"].(string))
 	}
 
@@ -206,5 +206,3 @@ func NewPassword(params map[string]interface{}, body []byte) ([]byte, error, int
 
 	return nil, nil, http.StatusOK
 }
-
-
