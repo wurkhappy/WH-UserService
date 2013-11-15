@@ -7,12 +7,11 @@ import (
 	"fmt"
 	"github.com/kr/s3"
 	"github.com/wurkhappy/WH-UserService/models"
+	"github.com/wurkhappy/WH-Config"
 	"log"
 	"net/http"
 	"time"
 )
-
-var WebServerURL string = "http://localhost:4000"
 
 func CreateUser(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	var err error
@@ -46,7 +45,7 @@ func CreateUser(params map[string]interface{}, body []byte) ([]byte, error, int)
 		user.AvatarURL = "https://d3kq8dzp7eezz0.cloudfront.net/user/" + user.ID + ".jpg"
 		go uploadPhoto(user.ID, requestData["avatarData"].(string))
 	} else {
-		user.AvatarURL = WebServerURL + "/img/default_photo.jpg"
+		user.AvatarURL = config.WebServer + "/img/default_photo.jpg"
 	}
 
 	user.Save()
@@ -138,7 +137,7 @@ func SearchUsers(params map[string]interface{}, body []byte) ([]byte, error, int
 			if create, ok := params["create"].([]string); ok && create[0] == "true" && user == nil {
 				user = models.NewUser()
 				user.Email = email
-				user.AvatarURL = WebServerURL + "/img/default_photo.jpg"
+				user.AvatarURL = config.WebServer + "/img/default_photo.jpg"
 				user.Save()
 			}
 			users = append(users, user)

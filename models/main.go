@@ -9,7 +9,7 @@ var connection *amqp.Connection
 
 func Setup() {
 	var err error
-	connection, err = amqp.Dial(config.EmailURI)
+	connection, err = amqp.Dial(config.RMQBroker)
 	if err != nil {
 		panic(err)
 	}
