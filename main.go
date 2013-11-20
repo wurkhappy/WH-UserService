@@ -4,12 +4,12 @@ import (
 	// "bytes"
 	"encoding/json"
 	"github.com/wurkhappy/WH-Config"
+	"github.com/wurkhappy/WH-UserService/DB"
 	"github.com/wurkhappy/WH-UserService/models"
 	"github.com/wurkhappy/mdp"
 	// "net/http"
 	"net/url"
 	// "strconv"
-	// "log"
 	"flag"
 )
 
@@ -28,6 +28,7 @@ func main() {
 	} else {
 		config.Test()
 	}
+	DB.Setup(*production)
 	models.Setup()
 	router.Start()
 
@@ -55,7 +56,6 @@ func route(worker mdp.Worker) {
 		}
 		var req *ServiceReq
 		json.Unmarshal(request[0], &req)
-
 		//route to function based on the path and method
 		route, pathParams, _ := router.FindRoute(req.Path)
 		routeMap := route.Dest.(map[string]interface{})
