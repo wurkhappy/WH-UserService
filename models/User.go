@@ -9,7 +9,6 @@ import (
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-UserService/DB"
 	"log"
-	"net/http"
 	"strings"
 	"time"
 )
@@ -120,11 +119,7 @@ func (u *User) PasswordIsValid(password string) bool {
 }
 
 func (u *User) AddToPaymentProcessor() {
-	client := &http.Client{}
-	r, _ := http.NewRequest("POST", config.PaymentInfoService+"/user/"+u.ID, nil)
-	_, err := client.Do(r)
-	if err != nil {
-	}
+	sendServiceRequest("POST", config.PaymentInfoService, "/user/"+u.ID, nil)
 }
 
 func (u *User) SendVerificationEmail() {
