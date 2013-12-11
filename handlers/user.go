@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/kr/s3"
-	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-UserService/models"
 	"log"
 	"net/http"
