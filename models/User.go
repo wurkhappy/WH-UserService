@@ -28,7 +28,8 @@ type User struct {
 func NewUser() *User {
 	id, _ := uuid.NewV4()
 	return &User{
-		ID: id.String(),
+		ID:          id.String(),
+		DateCreated: time.Now(),
 	}
 }
 
