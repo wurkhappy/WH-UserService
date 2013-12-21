@@ -177,3 +177,14 @@ func (u *User) SyncWithExistingInvitation() error {
 	}
 	return nil
 }
+
+func (u *User) SyncWithExistingUser(existingUser *User) error {
+	if existingUser != nil {
+		if existingUser.IsUserRegistered() {
+			return fmt.Errorf("%s", "Email is already registered")
+		} else {
+			u.ID = existingUser.ID
+		}
+	}
+	return nil
+}

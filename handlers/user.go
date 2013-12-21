@@ -24,10 +24,24 @@ func CreateUser(params map[string]interface{}, body []byte) ([]byte, error, int)
 		return nil, fmt.Errorf("%s", "Email cannot be blank"), http.StatusBadRequest
 	}
 
-	err = user.SyncWithExistingInvitation()
-	if err != nil {
-		return nil, err, http.StatusConflict
+	//For the beta we are only allowing users that we have pre-registered.
+	//This checks if a user is pre-registered.
+	//If they are we sync up the accounts
+	//Here we also check if the email is already registered (TODO: should break that out into it's own method)
+	existingUser, _ := models.FindUserByEmail(user.Email)
+	if existingUser == nil {
+		return nil, fmt.Errorf("%s", "Please contact us to register for an account"), http.StatusConflict
+	} else {
+		err = user.SyncWithExistingUser(existingUser)
+		if err != nil {
+			return nil, err, http.StatusConflict
+		}
 	}
+
+	// err = user.SyncWithExistingInvitation()
+	// if err != nil {
+	// 	return nil, err, http.StatusConflict
+	// }
 
 	pw, ok := requestData["password"].(string)
 	if !ok {
