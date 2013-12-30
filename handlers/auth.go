@@ -17,6 +17,10 @@ func Login(params map[string]interface{}, body []byte) ([]byte, error, int) {
 		return nil, fmt.Errorf("%s", "Account cannot be found"), http.StatusBadRequest
 	}
 
+	if _, ok := requestData["password"]; !ok {
+		return nil, fmt.Errorf("%s", "Please provide a password"), http.StatusBadRequest
+	}
+
 	if !user.PasswordIsValid(requestData["password"].(string)) {
 		return nil, fmt.Errorf("%s", "Invalid password"), http.StatusBadRequest
 	}
