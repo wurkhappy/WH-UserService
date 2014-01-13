@@ -146,7 +146,8 @@ func (u *User) SendForgotPasswordEmail() {
 func sendEmail(path string, body []byte) error {
 	publisher, err := rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, path)
 	if err != nil {
-		return err
+		dialRMQ()
+		publisher, _ = rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, path)
 	}
 	publisher.Publish(body, false)
 	return nil
