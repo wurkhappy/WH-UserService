@@ -38,11 +38,6 @@ func CreateUser(params map[string]interface{}, body []byte) ([]byte, error, int)
 		}
 	}
 
-	// err = user.SyncWithExistingInvitation()
-	// if err != nil {
-	// 	return nil, err, http.StatusConflict
-	// }
-
 	pw, ok := requestData["password"].(string)
 	if !ok {
 		return nil, fmt.Errorf("%s", "Password cannot be blank"), http.StatusConflict
@@ -64,7 +59,9 @@ func CreateUser(params map[string]interface{}, body []byte) ([]byte, error, int)
 	user.Save()
 
 	user.AddToPaymentProcessor()
-	user.SendVerificationEmail()
+	if !user.IsVerified {
+		user.SendVerificationEmail()
+	}
 
 	u, _ := json.Marshal(user)
 	return u, nil, http.StatusOK

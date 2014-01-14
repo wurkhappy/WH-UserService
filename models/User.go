@@ -174,6 +174,7 @@ func (u *User) SyncWithExistingInvitation() error {
 			return fmt.Errorf("%s", "Email is already registered")
 		} else {
 			u.ID = test.ID
+			u.IsVerified = test.IsVerified
 		}
 	}
 	return nil
@@ -185,6 +186,7 @@ func (u *User) SyncWithExistingUser(existingUser *User) error {
 			return fmt.Errorf("%s", "Email is already registered")
 		} else {
 			u.ID = existingUser.ID
+			u.IsVerified = existingUser.IsVerified
 		}
 	}
 	return nil
