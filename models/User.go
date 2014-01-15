@@ -14,15 +14,16 @@ import (
 )
 
 type User struct {
-	ID          string    `json:"id" bson:"_id"`
-	FirstName   string    `json:"firstName,omitempty"`
-	LastName    string    `json:"lastName,omitempty"`
-	Email       string    `json:"email"`
-	PwHash      []byte    `json:"-"`
-	AvatarURL   string    `json:"avatarURL"`
-	PhoneNumber string    `json:"phoneNumber,omitempty"`
-	DateCreated time.Time `json:"dateCreated"`
-	IsVerified  bool      `json:"isVerified"`
+	ID           string    `json:"id" bson:"_id"`
+	FirstName    string    `json:"firstName,omitempty"`
+	LastName     string    `json:"lastName,omitempty"`
+	Email        string    `json:"email"`
+	PwHash       []byte    `json:"-"`
+	AvatarURL    string    `json:"avatarURL"`
+	PhoneNumber  string    `json:"phoneNumber,omitempty"`
+	DateCreated  time.Time `json:"dateCreated"`
+	IsVerified   bool      `json:"isVerified"`
+	IsRegistered bool      `json:"isRegistered"`
 }
 
 func NewUser() *User {

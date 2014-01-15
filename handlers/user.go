@@ -48,6 +48,7 @@ func CreateUser(params map[string]interface{}, body []byte) ([]byte, error, int)
 		return nil, err, http.StatusBadRequest
 	}
 	user.SetPassword(pw)
+	user.IsRegistered = true
 
 	if _, ok := requestData["avatarData"]; ok {
 		user.AvatarURL = "https://d3kq8dzp7eezz0.cloudfront.net/user/" + user.ID + ".jpg"
