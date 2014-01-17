@@ -58,11 +58,12 @@ func CreateUser(params map[string]interface{}, body []byte) ([]byte, error, int)
 	}
 
 	user.Save()
-
-	user.AddToPaymentProcessor()
-	if !user.IsVerified {
-		user.SendVerificationEmail()
-	}
+	go func(u *models.User) {
+		u.AddToPaymentProcessor()
+		if !u.IsVerified {
+			u.SendVerificationEmail()
+		}
+	}(user)
 
 	u, _ := json.Marshal(user)
 	return u, nil, http.StatusOK
