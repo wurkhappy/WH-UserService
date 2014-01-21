@@ -18,6 +18,7 @@ import (
 type User struct {
 	ID                  string    `json:"id" bson:"_id"`
 	FirstName           string    `json:"firstName,omitempty"`
+	FullFirstName       string    `json:"fullFirstName,omitempty"`
 	LastName            string    `json:"lastName,omitempty"`
 	Email               string    `json:"email"`
 	PwHash              []byte    `json:"-"`
@@ -27,10 +28,10 @@ type User struct {
 	IsVerified          bool      `json:"isVerified"`
 	IsProcessorVerified bool      `json:"isProcessorVerified"`
 	IsRegistered        bool      `json:"isRegistered"`
-	DOBMonth            int       `json:"dobMonth"`
-	DOBDay              int       `json:"dobDay"`
-	DOBYear             int       `json:"dobYear"`
-	SSN                 int       `json:"ssnLastFour"`
+	DOBMonth            string    `json:"dobMonth"`
+	DOBDay              string    `json:"dobDay"`
+	DOBYear             string    `json:"dobYear"`
+	SSN                 string    `json:"ssnLastFour"`
 	StreetAddress       string    `json:"streetAddress"`
 	PostalCode          string    `json:"postalCode"`
 }
@@ -168,8 +169,9 @@ func (u *User) AddToPaymentProcessor() {
 }
 
 func (u *User) UpdateWithPaymentProcessor() {
-	if u.FirstName != "" && u.LastName != "" && u.PhoneNumber != "" && u.DOBYear != 0 && u.DOBMonth != 0 && u.StreetAddress != "" && u.PostalCode != "" && u.SSN != 0 {
-		resp, statusCode := sendServiceRequest("PUT", config.PaymentInfoService, "/user/"+u.ID, nil)
+	if u.FirstName != "" && u.LastName != "" && u.PhoneNumber != "" && u.DOBYear != "" && u.DOBMonth != "" && u.StreetAddress != "" && u.PostalCode != "" && u.SSN != "" {
+		body, _ := json.Marshal(u)
+		resp, statusCode := sendServiceRequestWithTimeout("PUT", config.PaymentInfoService, "/user/"+u.ID, body, 3000)
 		if statusCode >= 400 {
 			return
 		}
