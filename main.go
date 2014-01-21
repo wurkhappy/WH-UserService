@@ -45,7 +45,7 @@ func main() {
 	var wg sync.WaitGroup
 
 	for i := 0; i < gophers; i++ {
-		worker := mdp.NewWorker(config.MDPBroker, config.AgreementsService, false)
+		worker := mdp.NewWorker(config.MDPBroker, config.UserService, false)
 		defer worker.Close()
 		go route(worker, shutChan, wg)
 	}
