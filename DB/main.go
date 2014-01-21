@@ -25,3 +25,15 @@ func Connect(production bool) {
 		panic(err)
 	}
 }
+
+func Close() {
+	SaveUser.Close()
+	UpdateUser.Close()
+	UpsertUser.Close()
+	FindUserByEmail.Close()
+	FindUserByID.Close()
+	DeleteUser.Close()
+	FindUsers.Close()
+
+	DB.Close()
+}

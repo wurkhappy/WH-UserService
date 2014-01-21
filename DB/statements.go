@@ -13,7 +13,6 @@ var FindUserByEmail *sql.Stmt
 var FindUserByID *sql.Stmt
 var DeleteUser *sql.Stmt
 var FindUsers *sql.Stmt
-var SyncWithExistingInvitation *sql.Stmt
 
 func CreateStatements() {
 	var err error
