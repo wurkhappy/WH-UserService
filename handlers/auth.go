@@ -14,17 +14,16 @@ func Login(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	user, err := models.FindUserByEmail(requestData["email"].(string))
 
 	if user == nil || err != nil {
-		return nil, fmt.Errorf("%s", "Account cannot be found"), http.StatusBadRequest
+		return nil, fmt.Errorf("%s", "Sorry, we couldn't find an account with that email and password combination"), http.StatusBadRequest
 	}
 
 	if _, ok := requestData["password"]; !ok {
-		return nil, fmt.Errorf("%s", "Please provide a password"), http.StatusBadRequest
+		return nil, fmt.Errorf("%s", "Oops! Looks like you forget to enter your password."), http.StatusBadRequest
 	}
 
 	if !user.PasswordIsValid(requestData["password"].(string)) {
-		return nil, fmt.Errorf("%s", "Invalid password"), http.StatusBadRequest
+		return nil, fmt.Errorf("%s", "Sorry, that password isn't right. Would you like to <a href='#forgot-password'>reset your password</a>?"), http.StatusBadRequest
 	}
 
-	u, _ := json.Marshal(user)
-	return u, nil, http.StatusOK
+	return user.ToJSON(), nil, http.StatusOK
 }
