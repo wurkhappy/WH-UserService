@@ -25,6 +25,5 @@ func Login(params map[string]interface{}, body []byte) ([]byte, error, int) {
 		return nil, fmt.Errorf("%s", "Invalid password"), http.StatusBadRequest
 	}
 
-	u, _ := json.Marshal(user)
-	return u, nil, http.StatusOK
+	return user.ToJSON(), nil, http.StatusOK
 }

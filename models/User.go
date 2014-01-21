@@ -1,6 +1,7 @@
 package models
 
 import (
+	"bytes"
 	"code.google.com/p/go.crypto/bcrypt"
 	"encoding/json"
 	"fmt"
@@ -9,21 +10,45 @@ import (
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-UserService/DB"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 )
 
 type User struct {
-	ID           string    `json:"id" bson:"_id"`
-	FirstName    string    `json:"firstName,omitempty"`
-	LastName     string    `json:"lastName,omitempty"`
-	Email        string    `json:"email"`
-	PwHash       []byte    `json:"-"`
-	AvatarURL    string    `json:"avatarURL"`
-	PhoneNumber  string    `json:"phoneNumber,omitempty"`
-	DateCreated  time.Time `json:"dateCreated"`
-	IsVerified   bool      `json:"isVerified"`
-	IsRegistered bool      `json:"isRegistered"`
+	ID                  string    `json:"id" bson:"_id"`
+	FirstName           string    `json:"firstName,omitempty"`
+	LastName            string    `json:"lastName,omitempty"`
+	Email               string    `json:"email"`
+	PwHash              []byte    `json:"-"`
+	AvatarURL           string    `json:"avatarURL"`
+	PhoneNumber         string    `json:"phoneNumber,omitempty"`
+	DateCreated         time.Time `json:"dateCreated"`
+	IsVerified          bool      `json:"isVerified"`
+	IsProcessorVerified bool      `json:"isProcessorVerified"`
+	IsRegistered        bool      `json:"isRegistered"`
+	DOBMonth            int       `json:"dobMonth"`
+	DOBDay              int       `json:"dobDay"`
+	DOBYear             int       `json:"dobYear"`
+	SSN                 int       `json:"ssnLastFour"`
+	StreetAddress       string    `json:"streetAddress"`
+	PostalCode          string    `json:"postalCode"`
+}
+
+type Users []*User
+
+func (u Users) ToJSON() []byte {
+	count := len(u)
+	var b bytes.Buffer
+	b.WriteString(`[`)
+	for i, user := range u {
+		b.WriteString(user.toJSONString())
+		if i < count-1 {
+			b.WriteString(`,`)
+		}
+	}
+	b.WriteString(`]`)
+	return b.Bytes()
 }
 
 func NewUser() *User {
@@ -51,6 +76,24 @@ func (u *User) Save() (err error) {
 		return err
 	}
 	return nil
+}
+
+func (u *User) ToJSON() []byte {
+	return []byte(u.toJSONString())
+}
+
+func (u *User) toJSONString() string {
+	return `{` +
+		`"id":"` + u.ID + `",` +
+		`"firstName":"` + u.FirstName + `",` +
+		`"lastName":"` + u.LastName + `",` +
+		`"email":"` + u.Email + `",` +
+		`"avatarURL":"` + u.AvatarURL + `",` +
+		`"phoneNumber":"` + u.PhoneNumber + `",` +
+		`"isVerified":` + strconv.FormatBool(u.IsVerified) + `,` +
+		`"isProcessorVerified":` + strconv.FormatBool(u.IsProcessorVerified) + `,` +
+		`"isRegistered":` + strconv.FormatBool(u.IsRegistered) + `,` +
+		`"dateCreated":` + u.DateCreated.Format(`"`+time.RFC3339Nano+`"`) + `}`
 }
 
 func FindUserByEmail(email string) (u *User, err error) {
@@ -85,14 +128,14 @@ func DeleteUserWithID(id string) (err error) {
 	return nil
 }
 
-func FindUsers(ids []string) []*User {
+func FindUsers(ids []string) Users {
 	for _, id := range ids {
 		_, err := uuid.ParseHex(id)
 		if err != nil {
 			return nil
 		}
 	}
-	var users []*User
+	var users Users
 	r, err := DB.FindUsers.Query("{" + strings.Join(ids, ",") + "}")
 	if err != nil {
 		log.Print(err)
@@ -122,6 +165,20 @@ func (u *User) PasswordIsValid(password string) bool {
 
 func (u *User) AddToPaymentProcessor() {
 	sendServiceRequest("POST", config.PaymentInfoService, "/user/"+u.ID, nil)
+}
+
+func (u *User) UpdateWithPaymentProcessor() {
+	if u.FirstName != "" && u.LastName != "" && u.PhoneNumber != "" && u.DOBYear != 0 && u.DOBMonth != 0 && u.StreetAddress != "" && u.PostalCode != "" && u.SSN != 0 {
+		resp, statusCode := sendServiceRequest("PUT", config.PaymentInfoService, "/user/"+u.ID, nil)
+		if statusCode >= 400 {
+			return
+		}
+		var r struct {
+			IsVerified bool `json:"isVerified"`
+		}
+		json.Unmarshal(resp, &r)
+		u.IsProcessorVerified = r.IsVerified
+	}
 }
 
 func (u *User) SendVerificationEmail() {

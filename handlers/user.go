@@ -65,8 +65,7 @@ func CreateUser(params map[string]interface{}, body []byte) ([]byte, error, int)
 		}
 	}(user)
 
-	u, _ := json.Marshal(user)
-	return u, nil, http.StatusOK
+	return user.ToJSON(), nil, http.StatusOK
 }
 
 func uploadPhoto(filename string, base64string string) (resp *http.Response) {
@@ -91,6 +90,16 @@ func uploadPhoto(filename string, base64string string) (resp *http.Response) {
 }
 
 func GetUser(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	id := params["id"].(string)
+	user, err := models.FindUserByID(id)
+	if err != nil {
+		return nil, err, http.StatusBadRequest
+	}
+
+	return user.ToJSON(), nil, http.StatusOK
+}
+
+func GetUserDetails(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	id := params["id"].(string)
 	user, err := models.FindUserByID(id)
 	if err != nil {
@@ -123,10 +132,11 @@ func UpdateUser(params map[string]interface{}, body []byte) ([]byte, error, int)
 		go uploadPhoto(user.ID, requestData["avatarData"].(string))
 	}
 
+	user.UpdateWithPaymentProcessor()
+
 	user.Save()
 
-	u, _ := json.Marshal(user)
-	return u, nil, http.StatusOK
+	return user.ToJSON(), nil, http.StatusOK
 }
 
 func DeleteUser(params map[string]interface{}, body []byte) ([]byte, error, int) {
@@ -140,7 +150,7 @@ func DeleteUser(params map[string]interface{}, body []byte) ([]byte, error, int)
 }
 
 func SearchUsers(params map[string]interface{}, body []byte) ([]byte, error, int) {
-	var users []*models.User
+	var users models.Users
 
 	if emails, ok := params["email"].([]string); ok {
 		for _, email := range emails {
@@ -161,8 +171,7 @@ func SearchUsers(params map[string]interface{}, body []byte) ([]byte, error, int
 		users = models.FindUsers(userIDs)
 	}
 
-	u, _ := json.Marshal(users)
-	return u, nil, http.StatusOK
+	return users.ToJSON(), nil, http.StatusOK
 }
 
 func VerifyUser(params map[string]interface{}, body []byte) ([]byte, error, int) {
@@ -172,8 +181,7 @@ func VerifyUser(params map[string]interface{}, body []byte) ([]byte, error, int)
 	user.IsVerified = true
 	user.Save()
 
-	u, _ := json.Marshal(user)
-	return u, nil, http.StatusOK
+	return user.ToJSON(), nil, http.StatusOK
 }
 
 func ForgotPassword(params map[string]interface{}, body []byte) ([]byte, error, int) {
