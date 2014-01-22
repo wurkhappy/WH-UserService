@@ -34,7 +34,7 @@ func CreateUser(params map[string]interface{}, body []byte) ([]byte, error, int)
 	} else {
 		err = user.SyncWithExistingUser(existingUser)
 		if err != nil {
-			return nil, err, http.StatusConflict
+			return nil, fmt.Errorf("Sorry, could not create the account"), http.StatusConflict
 		}
 	}
 
