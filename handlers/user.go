@@ -131,6 +131,11 @@ func UpdateUser(params map[string]interface{}, body []byte) ([]byte, error, int)
 		user.AvatarURL = "https://d3kq8dzp7eezz0.cloudfront.net/user/" + user.ID + ".jpg"
 		go uploadPhoto(user.ID, requestData["avatarData"].(string))
 	}
+	if user.FirstName == "" {
+		user.FirstName = user.FullFirstName
+	} else if user.FullFirstName == "" {
+		user.FullFirstName = user.FirstName
+	}
 
 	user.UpdateWithPaymentProcessor()
 
