@@ -171,7 +171,7 @@ func (u *User) AddToPaymentProcessor() {
 func (u *User) UpdateWithPaymentProcessor() {
 	if u.FirstName != "" && u.LastName != "" && u.PhoneNumber != "" && u.DOBYear != "" && u.DOBMonth != "" && u.StreetAddress != "" && u.PostalCode != "" && u.SSN != "" {
 		body, _ := json.Marshal(u)
-		resp, statusCode := sendServiceRequestWithTimeout("PUT", config.PaymentInfoService, "/user/"+u.ID, body, 3000)
+		resp, statusCode := sendServiceRequestWithTimeout("PUT", config.PaymentInfoService, "/user/"+u.ID, body, 9000)
 		if statusCode >= 400 {
 			return
 		}
