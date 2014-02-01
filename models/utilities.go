@@ -34,6 +34,7 @@ func sendServiceRequest(method, service, path string, body []byte) (response []b
 func sendServiceRequestWithTimeout(method, service, path string, body []byte, timeout int64) (response []byte, statusCode int) {
 	client := mdp.NewClient(config.MDPBroker, false)
 	client.Timeout = time.Duration(timeout * int64(time.Millisecond))
+	client.Retries = 1
 	defer client.Close()
 	m := map[string]interface{}{
 		"Method": method,
