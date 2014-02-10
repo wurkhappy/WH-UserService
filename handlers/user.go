@@ -200,7 +200,7 @@ func ForgotPassword(params map[string]interface{}, body []byte) ([]byte, error, 
 
 	user, err := models.FindUserByEmail(data.Email)
 	if err != nil {
-		return nil, fmt.Errorf("%s", "There was an error searching for that email"), http.StatusBadRequest
+		return nil, fmt.Errorf("%s", "We couldn't find that email. If you need help you can reach us at contact@wurkhappy.com"), http.StatusBadRequest
 	}
 
 	user.SendForgotPasswordEmail()
