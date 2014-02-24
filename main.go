@@ -87,6 +87,11 @@ func route(worker mdp.Worker, shutChan chan bool, wg sync.WaitGroup) {
 		}
 		var req *ServiceReq
 		json.Unmarshal(request[0], &req)
+		var userID string
+		if len(request) > 1 {
+			userID = string(request[1])
+		}
+		log.Println(userID, req.Path, req.Method)
 
 		//route to function based on the path and method
 		route, pathParams, err := router.FindRoute(req.Path)
