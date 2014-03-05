@@ -205,10 +205,10 @@ func (u *User) SendForgotPasswordEmail() {
 }
 
 func sendEmail(path string, body []byte) error {
-	publisher, err := rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, path)
+	publisher, err := rbtmq.NewPublisher(connection, config.EmailExchange, "topic", config.EmailQueue, path)
 	if err != nil {
 		dialRMQ()
-		publisher, _ = rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, path)
+		publisher, _ = rbtmq.NewPublisher(connection, config.EmailExchange, "topic", config.EmailQueue, path)
 	}
 	publisher.Publish(body, false)
 	return nil
