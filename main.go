@@ -4,6 +4,7 @@ import (
 	// "bytes"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-UserService/DB"
 	"github.com/wurkhappy/WH-UserService/models"
