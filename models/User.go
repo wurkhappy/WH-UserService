@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/nu7hatch/gouuid"
-	rbtmq "github.com/wurkhappy/Rabbitmq-go-wrapper"
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-UserService/DB"
 	"log"
@@ -182,36 +181,6 @@ func (u *User) UpdateWithPaymentProcessor() {
 		json.Unmarshal(resp, &r)
 		u.IsProcessorVerified = r.IsVerified
 	}
-}
-
-func (u *User) SendVerificationEmail() {
-	message := map[string]interface{}{
-		"Body": map[string]interface{}{
-			"user": u,
-		},
-	}
-	body, _ := json.Marshal(message)
-	sendEmail("/user/verify", body)
-}
-
-func (u *User) SendForgotPasswordEmail() {
-	message := map[string]interface{}{
-		"Body": map[string]interface{}{
-			"user": u,
-		},
-	}
-	body, _ := json.Marshal(message)
-	sendEmail("/user/password/forgot", body)
-}
-
-func sendEmail(path string, body []byte) error {
-	publisher, err := rbtmq.NewPublisher(connection, config.EmailExchange, "topic", config.EmailQueue, path)
-	if err != nil {
-		dialRMQ()
-		publisher, _ = rbtmq.NewPublisher(connection, config.EmailExchange, "topic", config.EmailQueue, path)
-	}
-	publisher.Publish(body, false)
-	return nil
 }
 
 func (u *User) ValidateNewPassword(pw string) error {
