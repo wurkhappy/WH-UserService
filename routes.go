@@ -15,7 +15,7 @@ var router urlrouter.Router = urlrouter.Router{
 			},
 		},
 		urlrouter.Route{
-			PathExp: "/user/search",
+			PathExp: "/users",
 			Dest: map[string]interface{}{
 				"GET": handlers.SearchUsers,
 			},
