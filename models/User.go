@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/nu7hatch/gouuid"
-	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-UserService/DB"
 	"log"
 	"strconv"
@@ -162,25 +161,6 @@ func (u *User) PasswordIsValid(password string) bool {
 		return false
 	}
 	return true
-}
-
-func (u *User) AddToPaymentProcessor() {
-	sendServiceRequest("POST", config.PaymentInfoService, "/user/"+u.ID, nil)
-}
-
-func (u *User) UpdateWithPaymentProcessor() {
-	if u.FirstName != "" && u.LastName != "" && u.PhoneNumber != "" && u.DOBYear != "" && u.DOBMonth != "" && u.StreetAddress != "" && u.PostalCode != "" && u.SSN != "" {
-		body, _ := json.Marshal(u)
-		resp, statusCode := sendServiceRequestWithTimeout("PUT", config.PaymentInfoService, "/user/"+u.ID, body, 9000)
-		if statusCode >= 400 {
-			return
-		}
-		var r struct {
-			IsVerified bool `json:"isVerified"`
-		}
-		json.Unmarshal(resp, &r)
-		u.IsProcessorVerified = r.IsVerified
-	}
 }
 
 func (u *User) ValidateNewPassword(pw string) error {

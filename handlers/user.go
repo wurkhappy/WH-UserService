@@ -1,15 +1,10 @@
 package handlers
 
 import (
-	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/kr/s3"
 	"github.com/wurkhappy/WH-UserService/models"
-	"log"
 	"net/http"
-	"time"
 )
 
 func CreateUser(params map[string]interface{}, body []byte) ([]byte, error, int) {
@@ -24,14 +19,9 @@ func CreateUser(params map[string]interface{}, body []byte) ([]byte, error, int)
 		return nil, fmt.Errorf("%s", "Email cannot be blank"), http.StatusBadRequest
 	}
 
-	//For the beta we are only allowing users that we have pre-registered.
-	//This checks if a user is pre-registered.
-	//If they are we sync up the accounts
-	//Here we also check if the email is already registered (TODO: should break that out into it's own method)
+	//Here we check if the email is already registered (TODO: should break that out into it's own method)
 	existingUser, _ := models.FindUserByEmail(user.Email)
-	if existingUser == nil {
-		return nil, fmt.Errorf("%s", "Please contact us to register for an account"), http.StatusConflict
-	} else {
+	if existingUser != nil {
 		err = user.SyncWithExistingUser(existingUser)
 		if err != nil {
 			return nil, fmt.Errorf("Sorry, could not create the account"), http.StatusConflict
@@ -50,43 +40,8 @@ func CreateUser(params map[string]interface{}, body []byte) ([]byte, error, int)
 	user.SetPassword(pw)
 	user.IsRegistered = true
 
-	if _, ok := requestData["avatarData"]; ok {
-		user.AvatarURL = "https://d3kq8dzp7eezz0.cloudfront.net/user/" + user.ID + ".jpg"
-		go uploadPhoto(user.ID, requestData["avatarData"].(string))
-	} else {
-		user.AvatarURL = "https://d3kq8dzp7eezz0.cloudfront.net/img/default_photo.jpg"
-	}
-
 	user.Save()
-	go func(u *models.User) {
-		u.AddToPaymentProcessor()
-		if !u.IsVerified {
-			// u.SendVerificationEmail()
-		}
-	}(user)
-
 	return user.ToJSON(), nil, http.StatusOK
-}
-
-func uploadPhoto(filename string, base64string string) (resp *http.Response) {
-	inputFmt := base64string[23 : len(base64string)-1]
-	photoData, err := base64.StdEncoding.DecodeString(inputFmt)
-	keys := s3.Keys{
-		AccessKey: "AKIAI2PQ6CTNJJAUMV3Q",
-		SecretKey: "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",
-	}
-	data := bytes.NewBuffer(photoData)
-	r, _ := http.NewRequest("PUT", "https://s3.amazonaws.com/media.wurkhappy.com/user/"+filename+".jpg", data)
-	r.ContentLength = int64(data.Len())
-	r.Header.Set("Date", time.Now().UTC().Format(http.TimeFormat))
-	r.Header.Set("X-Amz-Acl", "public-read")
-	r.Header.Set("Content-Type", "image/jpeg")
-	s3.Sign(r, keys)
-	resp, err = http.DefaultClient.Do(r)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return resp
 }
 
 func GetUser(params map[string]interface{}, body []byte) ([]byte, error, int) {
@@ -127,20 +82,14 @@ func UpdateUser(params map[string]interface{}, body []byte) ([]byte, error, int)
 		}
 		user.SetPassword(requestData["newPassword"].(string))
 	}
-	if _, ok := requestData["avatarData"]; ok {
-		user.AvatarURL = "https://d3kq8dzp7eezz0.cloudfront.net/user/" + user.ID + ".jpg"
-		go uploadPhoto(user.ID, requestData["avatarData"].(string))
-	}
+
 	if user.FirstName == "" {
 		user.FirstName = user.FullFirstName
 	} else if user.FullFirstName == "" {
 		user.FullFirstName = user.FirstName
 	}
 
-	user.UpdateWithPaymentProcessor()
-
 	user.Save()
-
 	return user.ToJSON(), nil, http.StatusOK
 }
 
