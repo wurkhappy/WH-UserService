@@ -41,7 +41,12 @@ func CreateUser(params map[string]interface{}, body []byte) ([]byte, error, int)
 	user.IsRegistered = true
 
 	user.Save()
-	return user.ToJSON(), nil, http.StatusOK
+
+	j := user.ToJSON()
+	events := Events{&Event{"user.created", j}}
+	go events.Publish()
+
+	return j, nil, http.StatusOK
 }
 
 func GetUser(params map[string]interface{}, body []byte) ([]byte, error, int) {
@@ -90,7 +95,12 @@ func UpdateUser(params map[string]interface{}, body []byte) ([]byte, error, int)
 	}
 
 	user.Save()
-	return user.ToJSON(), nil, http.StatusOK
+
+	j := user.ToJSON()
+	events := Events{&Event{"user.updated", j}}
+	go events.Publish()
+
+	return j, nil, http.StatusOK
 }
 
 func DeleteUser(params map[string]interface{}, body []byte) ([]byte, error, int) {

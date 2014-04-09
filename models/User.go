@@ -135,6 +135,7 @@ func FindUsers(ids []string) Users {
 			return nil
 		}
 	}
+	fmt.Println(strings.Join(ids, ","))
 	var users Users
 	r, err := DB.FindUsers.Query("{" + strings.Join(ids, ",") + "}")
 	if err != nil {

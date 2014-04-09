@@ -6,6 +6,7 @@ import (
 	"flag"
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-UserService/DB"
+	"github.com/wurkhappy/WH-UserService/handlers"
 	"github.com/wurkhappy/WH-UserService/models"
 	"github.com/wurkhappy/mdp"
 	"log"
@@ -30,6 +31,7 @@ func main() {
 	DB.Setup(*production)
 	defer DB.Close()
 	models.Setup()
+	handlers.Setup()
 	router.Start()
 
 	gophers := 10
