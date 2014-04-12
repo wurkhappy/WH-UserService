@@ -14,6 +14,7 @@ func CreateUser(params map[string]interface{}, body []byte) ([]byte, error, int)
 	var requestData map[string]interface{}
 	json.Unmarshal(body, &requestData)
 	json.Unmarshal(body, &user)
+	fmt.Println(user.Email, user.FirstName, user.LastName)
 
 	if user.Email == "" {
 		return nil, fmt.Errorf("%s", "Email cannot be blank"), http.StatusBadRequest
@@ -32,6 +33,7 @@ func CreateUser(params map[string]interface{}, body []byte) ([]byte, error, int)
 	if !ok {
 		return nil, fmt.Errorf("%s", "Password cannot be blank"), http.StatusConflict
 	}
+	fmt.Println(len(pw))
 
 	err = user.ValidateNewPassword(pw)
 	if err != nil {

@@ -91,7 +91,9 @@ func route(worker mdp.Worker, shutChan chan bool, wg sync.WaitGroup) {
 		var req *ServiceReq
 		json.Unmarshal(request[0], &req)
 
-		log.Println(req.UserID, req.Path, req.Method, string(req.Body))
+		if req.Path != "/user" {
+			log.Println(req.UserID, req.Path, req.Method, string(req.Body))
+		}
 
 		//route to function based on the path and method
 		route, pathParams, err := router.FindRoute(req.Path)
@@ -116,7 +118,7 @@ func route(worker mdp.Worker, shutChan chan bool, wg sync.WaitGroup) {
 		//run handler and do standard http stuff(write JSON, return err, set status code)
 		jsonData, err, statusCode := handler(params, req.Body)
 		if err != nil {
-			log.Println(req.UserID, req.Path, req.Method, string(req.Body), "ERROR", err.Error())
+			log.Println(req.UserID, req.Path, req.Method, "ERROR", err.Error())
 			resp := &Resp{[]byte(`{"description":"` + err.Error() + `"}`), statusCode}
 			d, _ := json.Marshal(resp)
 			reply = [][]byte{d}
