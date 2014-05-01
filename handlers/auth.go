@@ -11,8 +11,9 @@ import (
 func Login(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	var requestData map[string]interface{}
 	json.Unmarshal(body, &requestData)
-	user, err := models.FindUserByEmail(requestData["email"].(string))
+	fmt.Println(requestData["email"])
 
+	user, err := models.FindUserByEmail(requestData["email"].(string))
 	if user == nil || err != nil {
 		return nil, fmt.Errorf("Sorry, we couldn't find an account with that email and password combination"), http.StatusBadRequest
 	}
