@@ -91,7 +91,7 @@ func route(worker mdp.Worker, shutChan chan bool, wg sync.WaitGroup) {
 		var req *ServiceReq
 		json.Unmarshal(request[0], &req)
 
-		if req.Path != "/user" {
+		if req.Path != "/user" || req.Path != "/auth/login" {
 			log.Println(req.UserID, req.Path, req.Method, string(req.Body))
 		}
 

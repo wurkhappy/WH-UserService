@@ -34,6 +34,27 @@ type User struct {
 	PostalCode          string    `json:"postalCode"`
 }
 
+type user struct {
+	ID                  string    `json:"id" bson:"_id"`
+	FirstName           string    `json:"firstName,omitempty"`
+	FullFirstName       string    `json:"fullFirstName,omitempty"`
+	LastName            string    `json:"lastName,omitempty"`
+	Email               string    `json:"email"`
+	PwHash              []byte    `json:"-"`
+	AvatarURL           string    `json:"avatarURL"`
+	PhoneNumber         string    `json:"phoneNumber,omitempty"`
+	DateCreated         time.Time `json:"dateCreated"`
+	IsVerified          bool      `json:"isVerified"`
+	IsProcessorVerified bool      `json:"isProcessorVerified"`
+	IsRegistered        bool      `json:"isRegistered"`
+	DOBMonth            string    `json:"dobMonth"`
+	DOBDay              string    `json:"dobDay"`
+	DOBYear             string    `json:"dobYear"`
+	SSN                 string    `json:"ssnLastFour"`
+	StreetAddress       string    `json:"streetAddress"`
+	PostalCode          string    `json:"postalCode"`
+}
+
 type Users []*User
 
 func (u Users) ToJSON() []byte {
@@ -200,5 +221,33 @@ func (u *User) SyncWithExistingUser(existingUser *User) error {
 			u.IsVerified = existingUser.IsVerified
 		}
 	}
+	return nil
+}
+
+func (u *User) UnmarshalJSON(bytes []byte) (err error) {
+	var usr *user
+	err = json.Unmarshal(bytes, &usr)
+	if err != nil {
+		return err
+	}
+
+	u.ID = usr.ID
+	u.FirstName = usr.FirstName
+	u.FullFirstName = usr.FullFirstName
+	u.LastName = usr.LastName
+	u.Email = strings.ToLower(usr.Email)
+	u.PwHash = usr.PwHash
+	u.AvatarURL = usr.AvatarURL
+	u.PhoneNumber = usr.PhoneNumber
+	u.DateCreated = usr.DateCreated
+	u.IsVerified = usr.IsVerified
+	u.IsProcessorVerified = usr.IsProcessorVerified
+	u.IsRegistered = usr.IsRegistered
+	u.DOBMonth = usr.DOBMonth
+	u.DOBDay = usr.DOBDay
+	u.DOBYear = usr.DOBYear
+	u.SSN = usr.SSN
+	u.StreetAddress = usr.StreetAddress
+	u.PostalCode = usr.PostalCode
 	return nil
 }
