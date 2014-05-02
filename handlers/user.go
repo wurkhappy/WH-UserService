@@ -9,7 +9,8 @@ import (
 
 func CreateUser(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	var err error
-	user := models.NewUser()
+	usr := models.NewUser()
+	var user *models.User
 
 	var requestData map[string]interface{}
 	json.Unmarshal(body, &requestData)
