@@ -15,6 +15,8 @@ func CreateUser(params map[string]interface{}, body []byte) ([]byte, error, int)
 	var requestData map[string]interface{}
 	json.Unmarshal(body, &requestData)
 	json.Unmarshal(body, &user)
+	user.ID = usr.ID
+	user.DateCreated = usr.DateCreated
 	fmt.Println(user.Email, user.FirstName, user.LastName)
 
 	if user.Email == "" {
