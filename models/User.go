@@ -91,7 +91,7 @@ func (u *User) SetPassword(password string) error {
 func (u *User) Save() (err error) {
 	jsonByte, _ := json.Marshal(u)
 	r, err := DB.UpsertUser.Query(u.ID, u.PwHash, string(jsonByte))
-	r.Close()
+	defer r.Close()
 	if err != nil {
 		log.Print(err)
 		return err
