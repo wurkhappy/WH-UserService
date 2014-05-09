@@ -159,12 +159,14 @@ func ForgotPassword(params map[string]interface{}, body []byte) ([]byte, error, 
 		return nil, fmt.Errorf("%s", "Email cannot be blank"), http.StatusBadRequest
 	}
 
-	_, err := models.FindUserByEmail(data.Email)
+	user, err := models.FindUserByEmail(data.Email)
 	if err != nil {
 		return nil, fmt.Errorf("%s", "We couldn't find that email. If you need help you can reach us at contact@wurkhappy.com"), http.StatusBadRequest
 	}
 
-	// user.SendForgotPasswordEmail()
+	j := user.ToJSON()
+	events := Events{&Event{"user.forgot_password", j}}
+	go events.Publish()
 	return nil, nil, http.StatusOK
 }
 
