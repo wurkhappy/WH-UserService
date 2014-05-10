@@ -175,9 +175,9 @@ func ForgotPassword(params map[string]interface{}, body []byte) ([]byte, error, 
 
 func NewPassword(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	var data struct {
-		ID       string `json:"id"`
-		Password string `json:"password"`
-		Confirm  string `json:"confirm"`
+		ID          string `json:"id"`
+		OldPassword string `json:"currentPassword"`
+		NewPassword string `json:"newPassword"`
 	}
 	data.ID = params["id"].(string)
 
@@ -187,11 +187,11 @@ func NewPassword(params map[string]interface{}, body []byte) ([]byte, error, int
 	if err != nil {
 		return nil, fmt.Errorf("%s", "There was an error searching for that user"), http.StatusBadRequest
 	}
-
-	if data.Password != data.Confirm {
-		return nil, fmt.Errorf("%s", "Passwords do not match"), http.StatusBadRequest
+	if !user.PasswordIsValid(data.OldPassword) {
+		return nil, fmt.Errorf("Wrong password"), http.StatusBadRequest
 	}
-	user.SetPassword(data.Password)
+
+	user.SetPassword(data.NewPassword)
 	user.Save()
 
 	return nil, nil, http.StatusOK
