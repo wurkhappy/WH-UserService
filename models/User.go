@@ -236,7 +236,6 @@ func (u *User) UnmarshalJSON(bytes []byte) (err error) {
 	u.FullFirstName = usr.FullFirstName
 	u.LastName = usr.LastName
 	u.Email = strings.ToLower(usr.Email)
-	u.PwHash = usr.PwHash
 	u.AvatarURL = usr.AvatarURL
 	u.PhoneNumber = usr.PhoneNumber
 	u.DateCreated = usr.DateCreated
